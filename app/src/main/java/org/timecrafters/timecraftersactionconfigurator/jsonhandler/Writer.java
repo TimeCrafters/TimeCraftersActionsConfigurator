@@ -18,6 +18,7 @@ import java.util.HashMap;
 public class Writer {
   private ArrayList<DataStruct> dataStructs;
   private File file;
+  private boolean writeSuccessful = false;
 
   public Writer(ArrayList<DataStruct> dataStructs) {
     this.dataStructs = dataStructs;
@@ -48,6 +49,11 @@ public class Writer {
       // TODO: handle this
     }
 
+    this.writeSuccessful = writeSuccessful;
+    return writeSuccessful;
+  }
+
+  public boolean writeSucceeded() {
     return writeSuccessful;
   }
 }

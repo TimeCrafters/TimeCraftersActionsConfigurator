@@ -25,6 +25,7 @@ import java.util.HashMap;
 public class Reader {
   private final Context context;
   private ArrayList<DataStruct> dataStructs;
+  private boolean loadSuccessful = false;
 
   public Reader(Context context) {
     this.context = context;
@@ -90,6 +91,9 @@ public class Reader {
       }
     }
 
+    this.loadSuccessful = loadSuccessful;
     return loadSuccessful;
   }
+
+  public boolean getLoadSuccess() { return loadSuccessful; }
 }
