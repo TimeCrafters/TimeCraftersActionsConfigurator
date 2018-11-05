@@ -27,15 +27,19 @@ import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
   private static final int REQUEST_WRITE_PERMISSION = 70;
+  private static final int ACTIONS_LIST_SIZE = 10;
+
   protected Reader jsonReader;
   protected ArrayList<DataStruct> dataStructs;
-  private ArrayList<String> actionsList;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    this.dataStructs = new ArrayList<>();
+
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -45,23 +49,20 @@ public class MainActivity extends AppCompatActivity {
     fab.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        new Writer(dataStructs);
+
         Snackbar.make(view, "JSON Saved.", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
       }
     });
 
     checkPermissions();
-
-    this.actionsList = new ArrayList<>();
-    this.dataStructs = new ArrayList<>();
-
-    populateActionsList();
-    populateLayout();
+    // dataStructs should be populated from checkPermissions()->handleReader()
   }
 
   private void populateLayout() {
     int i = 0;
-    for(final String item : actionsList) {
+    for(final DataStruct item : dataStructs) {
       final int indexID = i;
       // Create items main container <-->
       LinearLayout parent = new LinearLayout(this);
@@ -76,6 +77,8 @@ public class MainActivity extends AppCompatActivity {
       // Toggle Button
       ToggleButton toggle = new ToggleButton(this);
       toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+      toggle.setChecked(item.enabled());
+
       if (toggle.isChecked()) {
         toggle.setText("Enabled");
       } else {
@@ -87,14 +90,14 @@ public class MainActivity extends AppCompatActivity {
       toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-          Toast.makeText(getApplicationContext(), "index: "+indexID+" item:"+item+" is "+b, Toast.LENGTH_SHORT).show();
+          item.setEnabled(b);
         }
       });
       parent.addView(toggle);
 
 
       TextView itemName = new TextView(this);
-      itemName.setText(item);
+      itemName.setText(item.name());
       itemName.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
       itemName.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
       parent.addView(itemName);
@@ -107,10 +110,17 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void populateActionsList() {
-    this.actionsList.add("One");
-    this.actionsList.add("Two");
-    this.actionsList.add("Three");
+  private void populateDataStructs() {
+   if (dataStructs.size() == 0) {
+     System.out.println(dataStructs);
+     for (int i = 0; i < ACTIONS_LIST_SIZE; i++) {
+       System.out.println("populating "+i);
+
+       DataStruct dataStruct = new DataStruct();
+       dataStruct.setName("Action 00"+i);
+       dataStructs.add(dataStruct);
+     }
+   }
   }
 
   private void checkPermissions() {
@@ -119,7 +129,10 @@ public class MainActivity extends AppCompatActivity {
               new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
               REQUEST_WRITE_PERMISSION);
     } else {
-      this.jsonReader = new Reader(this);
+      handleReader();
+
+      populateDataStructs();
+      populateLayout();
     }
   }
 
@@ -132,7 +145,10 @@ public class MainActivity extends AppCompatActivity {
           FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
           Snackbar.make(fab, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
-          this.jsonReader = new Reader(this);
+          handleReader();
+
+          populateDataStructs();
+          populateLayout();
 
         } else {
           FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -141,6 +157,16 @@ public class MainActivity extends AppCompatActivity {
         }
       }
     }
+  }
+
+  private void handleReader() {
+    this.jsonReader = new Reader(this);
+
+    this.dataStructs = jsonReader.dataStructs();
+
+    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+    Snackbar.make(fab, "Loaded from JSON.", Snackbar.LENGTH_LONG)
+            .setAction("Action", null).show();
   }
 
   @Override

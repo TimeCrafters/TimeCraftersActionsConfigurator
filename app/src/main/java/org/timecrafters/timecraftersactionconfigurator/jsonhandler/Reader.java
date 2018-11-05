@@ -5,6 +5,9 @@ import android.os.Environment;
 import android.util.JsonReader;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,26 +16,33 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class Reader {
   private final Context context;
-  private ArrayList<HashMap<String, DataStruct>> items;
+  private ArrayList<DataStruct> dataStructs;
 
   public Reader(Context context) {
     this.context = context;
-    this.items = new ArrayList<>();
+    this.dataStructs = new ArrayList<>();
 
     if (new File(getDirectory()).exists()) {
-      loadJSONFile();
+      loadJSON();
     } else {
       if (createDirectory(getDirectory())) {
-        loadJSONFile();
+        loadJSON();
       } else {
         Toast.makeText(this.context, "Failed to create directory '" + getDirectory() + "'", Toast.LENGTH_LONG).show();
       }
     }
+  }
+
+  public ArrayList dataStructs() {
+    return dataStructs;
   }
 
   private String getDirectory() {
@@ -51,7 +61,9 @@ public class Reader {
     }
   }
 
-  private void loadJSONFile() {
+  private boolean loadJSON() {
+    boolean loadSuccessful = false;
+
     File file = new File(getDirectory() + File.separator + "config.json");
     StringBuilder text = new StringBuilder();
 
@@ -66,11 +78,18 @@ public class Reader {
         }
         br.close();
 
-        JSONObject array = new JSONObject(text.toString());
-        System.out.println("Array" + array.toString());
+        Gson gson = new Gson();
+        DataStruct[] array = gson.fromJson(text.toString(), DataStruct[].class);
+        this.dataStructs = new ArrayList<>(Arrays.asList(array));
+
+        loadSuccessful = true;
 
       } catch (IOException e) {
-      } catch (JSONException e) {}
+        System.out.println(e);
+        // TODO: handle this
+      }
     }
+
+    return loadSuccessful;
   }
 }
