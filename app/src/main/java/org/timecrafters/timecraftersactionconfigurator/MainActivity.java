@@ -63,20 +63,24 @@ public class MainActivity extends AppCompatActivity {
     saveButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        Writer writer = new Writer(dataStructs);
-
-        if (writer.writeSucceeded()) {
-          Snackbar.make(view, "JSON Saved.", Snackbar.LENGTH_LONG)
-                  .setAction("Action", null).show();
-        } else {
-          Snackbar.make(view, "Failed to write JSON.", Snackbar.LENGTH_LONG)
-                  .setAction("Action", null).show();
-        }
+        saveJSON();
       }
     });
 
     checkPermissions();
     // dataStructs should be populated from checkPermissions()->handleReader()
+  }
+
+  private void saveJSON() {
+    Writer writer = new Writer(dataStructs);
+
+    if (writer.writeSucceeded()) {
+      Snackbar.make(saveButton, "JSON Saved.", Snackbar.LENGTH_LONG)
+              .setAction("Action", null).show();
+    } else {
+      Snackbar.make(saveButton, "Failed to write JSON.", Snackbar.LENGTH_LONG)
+              .setAction("Action", null).show();
+    }
   }
 
   private void populateLayout() {
@@ -109,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
           item.setEnabled(b);
+          saveJSON();
         }
       });
 
@@ -169,6 +174,9 @@ public class MainActivity extends AppCompatActivity {
 
        dataStructs.add(data);
      }
+
+     // auto create file //
+     saveJSON();
    }
   }
 
