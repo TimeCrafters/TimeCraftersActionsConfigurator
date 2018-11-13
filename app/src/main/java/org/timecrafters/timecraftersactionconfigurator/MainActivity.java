@@ -96,19 +96,32 @@ public class MainActivity extends AppCompatActivity {
         parent.setBackgroundResource(R.color.odd);
       }
 
+      // Edit button
+      Button edit = new Button(this);
+      edit.setText("Edit");
+      edit.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+      edit.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          startActivity(new Intent(getBaseContext(), EditActivity.class));
+        }
+      });
+
       // Toggle Button
       Switch toggle = new Switch(this);
-      toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+      toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
       toggle.setChecked(item.enabled());
 
-//      if (toggle.isChecked()) {
-//        toggle.setText("Enabled");
-//      } else {
-//        toggle.setText("Disabled");
-//      }
+      if (toggle.isChecked()) {
+        toggle.setText(item.name());
+      } else {
+        toggle.setText(item.name());
+      }
 
-//      toggle.setTextOn("Enabled");
-//      toggle.setTextOff("Disabled");
+      toggle.setTextOn(item.name());
+      toggle.setTextOff(item.name());
+      toggle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+      toggle.setTextSize(18);
       toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
@@ -117,21 +130,21 @@ public class MainActivity extends AppCompatActivity {
         }
       });
 
-
-      TextView itemName = new TextView(this);
-      itemName.setText(item.name());
-      itemName.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
-      itemName.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-      itemName.setTextSize(20);
-
+      parent.addView(edit);
       parent.addView(toggle);
-      parent.addView(itemName);
 
       LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
       primaryLayout.addView(parent);
 
       i++;
     }
+
+    LinearLayout padding = new LinearLayout(this);
+    padding.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 350));
+    padding.setOrientation(LinearLayout.HORIZONTAL);
+//    padding.setBackgroundColor(99550055);
+    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
+    primaryLayout.addView(padding);
   }
 
   private void populateLayoutWithErrorMessage() {
