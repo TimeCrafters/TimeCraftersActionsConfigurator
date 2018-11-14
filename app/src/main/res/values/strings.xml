@@ -10,4 +10,9 @@
         <item>Float</item>
         <item>String</item>
     </string-array>
+
+    <string-array name="boolean_array">
+        <item>true</item>
+        <item>false</item>
+    </string-array>
 </resources>

@@ -1,7 +1,10 @@
 package org.timecrafters.timecraftersactionconfigurator;
 
+import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Typeface;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -13,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 
 import java.util.ArrayList;
@@ -70,9 +74,6 @@ public class EditActivity extends AppCompatActivity {
 
             mainActivity.saveJSON(container, "Added \"" + name + "\".");
 
-            Log.i("EDIT", "variableName: " + name);
-            Log.i("EDIT", "variableType: " + type);
-            Log.i("EDIT", "encodedValue: " + DataStruct.encodeValue(type, defaultValue(type)));
           } else {
             Snackbar.make(view, "Name \""+name+"\" is already taken!", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
@@ -143,12 +144,18 @@ public class EditActivity extends AppCompatActivity {
     deleteButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        LinearLayout parent = ((LinearLayout) findViewById(finalIndex*MAGIC_NUM));
-        LinearLayout container = ((LinearLayout) findViewById(R.id.container));
-        container.removeView(parent);
+        Runnable data = new Runnable() {
+          public void run() {
+          LinearLayout parent = ((LinearLayout) findViewById(finalIndex * MAGIC_NUM));
+          LinearLayout container = ((LinearLayout) findViewById(R.id.container));
+          container.removeView(parent);
 
-        activeDataStruct.variables().remove(variableName);
-        mainActivity.saveJSON(container, "Deleted \""+variableName+"\".");
+          activeDataStruct.variables().remove(variableName);
+          mainActivity.saveJSON(container, "Deleted \"" + variableName + "\".");
+          recolorParents();
+        }};
+
+        showConfirmation(data, "Delete \""+variableName+"\"?", "Are you sure you want to delete \""+variableName+"\"?");
       }
     });
 
@@ -173,6 +180,17 @@ public class EditActivity extends AppCompatActivity {
     variableValueText.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
     variableValueText.setTextSize(18);
 
+    final Context context = this;
+    editButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        EditDialog editDialog = new EditDialog(context);
+        editDialog.setVariable(variableName, activeDataStruct.variables());
+        editDialog.setView(variableValueText);
+        editDialog.show();
+      }
+    });
+
     firstRow.addView(deleteButton);
     firstRow.addView(variableNameText);
 
@@ -182,5 +200,33 @@ public class EditActivity extends AppCompatActivity {
     parent.addView(firstRow);
     parent.addView(secondRow);
     container.addView(parent);
+  }
+
+  private void recolorParents() {
+    LinearLayout container = (LinearLayout) findViewById(R.id.container);
+    for (int i = 0; i < container.getChildCount(); i++) {
+      LinearLayout child = (LinearLayout) container.getChildAt(i);
+      if ((i % 2) == 0) {
+        child.setBackgroundResource(R.color.even);
+      } else {
+        child.setBackgroundResource(R.color.odd);
+      }
+    }
+  }
+
+  private void showConfirmation(Runnable data, String title, String message) {
+    final Runnable finalData = data;
+
+    AlertDialog.Builder confirmation = new AlertDialog.Builder(this);
+    confirmation.setTitle(title);
+    confirmation.setMessage(message);
+    confirmation.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialogInterface, int i) {
+        finalData.run();
+      }
+    });
+    confirmation.setNegativeButton("Cancel", null);
+    confirmation.show();
   }
 }
