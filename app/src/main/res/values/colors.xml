@@ -6,4 +6,10 @@
 
     <color name="even">#999999</color>
     <color name="odd">#777777</color>
+
+    <color name="checked_even">#995500</color>
+    <color name="checked_odd">#775500</color>
+
+    <color name="deleteButton">#990000</color>
+    <color name="deleteActive">#770000</color>
 </resources>

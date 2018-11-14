@@ -37,8 +37,12 @@ public class MainActivity extends AppCompatActivity {
   protected FloatingActionButton saveButton;
   private ArrayList<String> actionsList;
 
+  static public MainActivity mainActivity;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    this.mainActivity = this;
+
     this.dataStructs = new ArrayList<>();
     this.actionsList = new ArrayList<>();
     this.actionsList.add("RunDropRobot");
@@ -63,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
     saveButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        saveJSON();
+        saveJSON(saveButton);
       }
     });
 
@@ -71,14 +75,18 @@ public class MainActivity extends AppCompatActivity {
     // dataStructs should be populated from checkPermissions()->handleReader()
   }
 
-  private void saveJSON() {
+  public void saveJSON(View view) {
+    saveJSON(view, "");
+  }
+
+  public void saveJSON(View view, String message) {
     Writer writer = new Writer(dataStructs);
 
     if (writer.writeSucceeded()) {
-      Snackbar.make(saveButton, "JSON Saved.", Snackbar.LENGTH_LONG)
+      Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     } else {
-      Snackbar.make(saveButton, "Failed to write JSON.", Snackbar.LENGTH_LONG)
+      Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     }
   }
@@ -86,8 +94,9 @@ public class MainActivity extends AppCompatActivity {
   private void populateLayout() {
     int i = 0;
     for(final DataStruct item : dataStructs) {
+      final int n = i;
       // Create items main container <-->
-      LinearLayout parent = new LinearLayout(this);
+      final LinearLayout parent = new LinearLayout(this);
       parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
       parent.setOrientation(LinearLayout.HORIZONTAL);
       if ((i % 2) == 0) {
@@ -103,7 +112,9 @@ public class MainActivity extends AppCompatActivity {
       edit.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-          startActivity(new Intent(getBaseContext(), EditActivity.class));
+          Intent intent = new Intent(getBaseContext(), EditActivity.class);
+          intent.putExtra("dataStructsIndex", n);
+          startActivity(intent);
         }
       });
 
@@ -113,6 +124,11 @@ public class MainActivity extends AppCompatActivity {
       toggle.setChecked(item.enabled());
 
       if (toggle.isChecked()) {
+        if ((n % 2) == 0) {
+          parent.setBackgroundResource(R.color.checked_even);
+        } else {
+          parent.setBackgroundResource(R.color.checked_odd);
+        }
         toggle.setText(item.name());
       } else {
         toggle.setText(item.name());
@@ -125,8 +141,22 @@ public class MainActivity extends AppCompatActivity {
       toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+          if (b) {
+            if ((n % 2) == 0) {
+              parent.setBackgroundResource(R.color.checked_even);
+            } else {
+              parent.setBackgroundResource(R.color.checked_odd);
+            }
+          } else {
+            if ((n % 2) == 0) {
+              parent.setBackgroundResource(R.color.even);
+            } else {
+              parent.setBackgroundResource(R.color.odd);
+            }
+          }
+
           item.setEnabled(b);
-          saveJSON();
+          saveJSON(saveButton);
         }
       });
 
@@ -189,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
      }
 
      // auto create file //
-     saveJSON();
+     saveJSON(saveButton);
    }
   }
 
