@@ -48,6 +48,10 @@ public class DataStruct {
     return variables;
   }
 
+  public <T> T variable(String key) throws NullPointerException {
+    return valueOf(variables.get(key));
+  }
+
   @SuppressWarnings("unchecked")
   public static <T> T valueOf(String value) {
     String[] split = value.split("x");
