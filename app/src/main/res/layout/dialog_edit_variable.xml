@@ -70,7 +70,7 @@
                     android:layout_weight="1"
                     android:ems="10"
                     android:hint="0.0"
-                    android:inputType="numberDecimal"
+                    android:inputType="numberSigned|numberDecimal"
                     android:selectAllOnFocus="false"
                     android:singleLine="true" />
             </LinearLayout>
@@ -96,7 +96,7 @@
                     android:layout_weight="1"
                     android:ems="10"
                     android:hint="0"
-                    android:inputType="number"
+                    android:inputType="numberSigned"
                     android:singleLine="true" />
 
             </LinearLayout>
