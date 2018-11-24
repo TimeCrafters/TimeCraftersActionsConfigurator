@@ -95,7 +95,8 @@ public class EditDialog extends Dialog {
         stringEditor.setVisibility(View.GONE);
         break;
       }
-      case "Integer": {
+      case "Integer":
+      case "Long": {
         integerValue.setText(value);
 
         booleanEditor.setVisibility(View.GONE);
@@ -136,6 +137,10 @@ public class EditDialog extends Dialog {
         break;
       }
       case "Integer": {
+        value = integerValue.getText().toString();
+        break;
+      }
+      case "Long": {
         value = integerValue.getText().toString();
         break;
       }

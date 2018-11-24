@@ -69,6 +69,9 @@ public class DataStruct {
       case "I": {
         return (T) Integer.valueOf(split[(split.length-1)]);
       }
+      case "L": {
+        return (T) Long.valueOf(split[(split.length-1)]);
+      }
       case "S": {
         return (T) String.valueOf(split[(split.length-1)]);
       }
@@ -94,6 +97,9 @@ public class DataStruct {
       case "I": {
         return "Integer";
       }
+      case "L": {
+        return "Long";
+      }
       case "S": {
         return "String";
       }
@@ -116,6 +122,9 @@ public class DataStruct {
       }
       case "Integer": {
         return "Ix"+value;
+      }
+      case "Long": {
+        return "Lx"+value;
       }
       case "String": {
         return "Sx"+value;

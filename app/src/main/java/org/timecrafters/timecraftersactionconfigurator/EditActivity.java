@@ -113,6 +113,9 @@ public class EditActivity extends AppCompatActivity {
       case "Integer": {
         return "Ix"+0;
       }
+      case "Long": {
+        return "Lx"+0;
+      }
       case "String": {
         return "Sx"+"string";
       }

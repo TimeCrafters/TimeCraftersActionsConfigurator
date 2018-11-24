@@ -6,6 +6,7 @@
     <string-array name="types_array">
         <item>Boolean</item>
         <item>Integer</item>
+        <item>Long</item>
         <item>Double</item>
         <item>Float</item>
         <item>String</item>
