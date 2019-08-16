@@ -20,8 +20,9 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
+import org.timecrafters.timecraftersactionconfigurator.actionSupport.AddActionDialog;
+import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
@@ -34,8 +35,9 @@ public class MainActivity extends AppCompatActivity {
 
   protected Reader jsonReader;
   protected ArrayList<DataStruct> dataStructs;
-  protected FloatingActionButton saveButton;
-  private ArrayList<String> actionsList;
+  protected FloatingActionButton addActionButton;
+
+  private Switch toggleSwitch;
 
   static public MainActivity mainActivity;
 
@@ -44,35 +46,129 @@ public class MainActivity extends AppCompatActivity {
     this.mainActivity = this;
 
     this.dataStructs = new ArrayList<>();
-    this.actionsList = new ArrayList<>();
-    this.actionsList.add("RunDropRobot");
-    this.actionsList.add("RunPostDropUTurn");
-    this.actionsList.add("RunDriveToDetect");
-    this.actionsList.add("RunMineralDetect");
-    this.actionsList.add("RunMineralKick");
-    this.actionsList.add("RunTeamMarkerDrive");
-    this.actionsList.add("RunTeamMarkerPlace");
-    this.actionsList.add("RunDriveToPark_fromTMP");
-    this.actionsList.add("RunDriveToPark_fromMK");
 
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    this.saveButton = (FloatingActionButton) findViewById(R.id.fab);
-    saveButton.setVisibility(View.GONE);
-    saveButton.setEnabled(false);
+    this.addActionButton = (FloatingActionButton) findViewById(R.id.fab);
 
-    saveButton.setOnClickListener(new View.OnClickListener() {
+    addActionButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        saveJSON(saveButton);
+        newActionDialog();
       }
     });
 
     checkPermissions();
     // dataStructs should be populated from checkPermissions()->handleReader()
+  }
+
+  private void newActionDialog() {
+    AddActionDialog addActionDialog = new AddActionDialog(this, this);
+    addActionDialog.show();
+  }
+
+  public void addNewAction(String name) {
+    DataStruct dataStruct = new DataStruct();
+    dataStruct.setName(name);
+    dataStructs.add(dataStruct);
+
+    addAction(dataStruct);
+  }
+
+  public boolean actionNameIsUnique(String name) {
+    boolean unique = true;
+
+    for (DataStruct dataStruct : dataStructs) {
+      if (dataStruct.name().equals(name)) { unique = false; }
+    }
+
+    return unique;
+  }
+
+  private void addAction(final DataStruct dataStruct) {
+    // Create items main container <-->
+    final LinearLayout parent = new LinearLayout(this);
+    parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    parent.setOrientation(LinearLayout.HORIZONTAL);
+
+    // Edit button
+    Button edit = new Button(this);
+    edit.setText("Edit");
+    edit.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    edit.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        Intent intent = new Intent(getBaseContext(), EditActivity.class);
+        intent.putExtra("dataStructsIndex", dataStructs.indexOf(dataStruct));
+        startActivity(intent);
+      }
+    });
+
+    // Toggle Button
+    Switch toggle = new Switch(this);
+    toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    toggle.setChecked(dataStruct.enabled());
+
+    toggle.setTag("toggle");
+    toggle.setText(dataStruct.name());
+    toggle.setTextOn(dataStruct.name());
+    toggle.setTextOff(dataStruct.name());
+    toggle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+    toggle.setTextSize(18);
+    toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      @Override
+      public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        recolor();
+
+        dataStruct.setEnabled(b);
+        saveJSON(addActionButton);
+      }
+    });
+
+    parent.addView(edit);
+    parent.addView(toggle);
+
+    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
+    primaryLayout.addView(parent);
+
+    recolor();
+  }
+
+  private void recolor() {
+    LinearLayout container = (LinearLayout) findViewById(R.id.primary_layout);
+    for (int i = 0; i < container.getChildCount(); i++) {
+      LinearLayout child = (LinearLayout) container.getChildAt(i);
+
+      if (child.getChildCount() <= 1) { continue; } // Don't recolor primary_layout
+      boolean toggleFound = false;
+
+      for (int j = 0; j < child.getChildCount(); j++) {
+        View view = child.getChildAt(j);
+
+        if (view.getTag() != null && ((String) view.getTag()).equals("toggle")) {
+          toggleFound = true;
+          toggleSwitch = (Switch) view;
+          break;
+        }
+      }
+
+      if (toggleFound && toggleSwitch.isChecked()) {
+        if ((i % 2) == 0) {
+          child.setBackgroundResource(R.color.checked_even);
+        } else {
+          child.setBackgroundResource(R.color.checked_odd);
+        }
+      } else {
+        if ((i % 2) == 0) {
+          child.setBackgroundResource(R.color.even);
+        } else {
+          child.setBackgroundResource(R.color.odd);
+        }
+      }
+    }
   }
 
   public void saveJSON(View view) {
@@ -83,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
     Writer writer = new Writer(dataStructs);
 
     if (writer.writeSucceeded()) {
-      Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_LONG)
+      Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_SHORT)
               .setAction("Action", null).show();
     } else {
       Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
@@ -92,89 +188,16 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void populateLayout() {
-    int i = 0;
-    for(final DataStruct item : dataStructs) {
-      final int n = i;
-      // Create items main container <-->
-      final LinearLayout parent = new LinearLayout(this);
-      parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-      parent.setOrientation(LinearLayout.HORIZONTAL);
-      if ((i % 2) == 0) {
-        parent.setBackgroundResource(R.color.even);
-      } else {
-        parent.setBackgroundResource(R.color.odd);
-      }
-
-      // Edit button
-      Button edit = new Button(this);
-      edit.setText("Edit");
-      edit.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
-      edit.setOnClickListener(new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-          Intent intent = new Intent(getBaseContext(), EditActivity.class);
-          intent.putExtra("dataStructsIndex", n);
-          startActivity(intent);
-        }
-      });
-
-      // Toggle Button
-      Switch toggle = new Switch(this);
-      toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
-      toggle.setChecked(item.enabled());
-
-      if (toggle.isChecked()) {
-        if ((n % 2) == 0) {
-          parent.setBackgroundResource(R.color.checked_even);
-        } else {
-          parent.setBackgroundResource(R.color.checked_odd);
-        }
-        toggle.setText(item.name());
-      } else {
-        toggle.setText(item.name());
-      }
-
-      toggle.setTextOn(item.name());
-      toggle.setTextOff(item.name());
-      toggle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-      toggle.setTextSize(18);
-      toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-        @Override
-        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-          if (b) {
-            if ((n % 2) == 0) {
-              parent.setBackgroundResource(R.color.checked_even);
-            } else {
-              parent.setBackgroundResource(R.color.checked_odd);
-            }
-          } else {
-            if ((n % 2) == 0) {
-              parent.setBackgroundResource(R.color.even);
-            } else {
-              parent.setBackgroundResource(R.color.odd);
-            }
-          }
-
-          item.setEnabled(b);
-          saveJSON(saveButton);
-        }
-      });
-
-      parent.addView(edit);
-      parent.addView(toggle);
-
-      LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
-      primaryLayout.addView(parent);
-
-      i++;
+    for(DataStruct item : dataStructs) {
+      addAction(item);
     }
 
-    LinearLayout padding = new LinearLayout(this);
-    padding.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 350));
-    padding.setOrientation(LinearLayout.HORIZONTAL);
-//    padding.setBackgroundColor(99550055);
-    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
-    primaryLayout.addView(padding);
+//    LinearLayout padding = new LinearLayout(this);
+//    padding.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 350));
+//    padding.setOrientation(LinearLayout.HORIZONTAL);
+////    padding.setBackgroundColor(99550055);
+//    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
+//    primaryLayout.addView(padding);
   }
 
   private void populateLayoutWithErrorMessage() {
@@ -209,32 +232,17 @@ public class MainActivity extends AppCompatActivity {
 
   }
 
-  private void populateDataStructs() {
-   if (dataStructs.size() == 0) {
-     for (int i = 0; i < actionsList.size(); i++) {
-       DataStruct data = new DataStruct();
-       data.setName(actionsList.get(i));
-
-       dataStructs.add(data);
-     }
-
-     // auto create file //
-     saveJSON(saveButton);
-   }
-  }
-
   private void checkPermissions() {
     if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
       ActivityCompat.requestPermissions(MainActivity.this,
               new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
               REQUEST_WRITE_PERMISSION);
     } else {
-      saveButton.setVisibility(View.VISIBLE);
-      saveButton.setEnabled(true);
+      addActionButton.setVisibility(View.VISIBLE);
+      addActionButton.setEnabled(true);
 
       handleReader();
 
-      populateDataStructs();
       populateLayout();
     }
   }
@@ -245,19 +253,18 @@ public class MainActivity extends AppCompatActivity {
     switch (requestCode) {
       case REQUEST_WRITE_PERMISSION: {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-          saveButton.setVisibility(View.VISIBLE);
-          saveButton.setEnabled(true);
+          addActionButton.setVisibility(View.VISIBLE);
+          addActionButton.setEnabled(true);
 
-          Snackbar.make(saveButton, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
+          Snackbar.make(addActionButton, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
           handleReader();
 
-          populateDataStructs();
           populateLayout();
 
         } else {
           populateLayoutWithErrorMessage();
-          Snackbar.make(saveButton, "Read/Write Permission is required!", Snackbar.LENGTH_LONG)
+          Snackbar.make(addActionButton, "Read/Write Permission is required!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
         }
       }
@@ -270,10 +277,10 @@ public class MainActivity extends AppCompatActivity {
     if (jsonReader.getLoadSuccess()) {
       this.dataStructs = jsonReader.dataStructs();
 
-      Snackbar.make(saveButton, "Loaded from JSON.", Snackbar.LENGTH_LONG)
+      Snackbar.make(addActionButton, "Loaded from JSON.", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     } else {
-      Snackbar.make(saveButton, "Failed to load JSON.", Snackbar.LENGTH_LONG)
+      Snackbar.make(addActionButton, "Failed to load JSON.", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     }
   }
