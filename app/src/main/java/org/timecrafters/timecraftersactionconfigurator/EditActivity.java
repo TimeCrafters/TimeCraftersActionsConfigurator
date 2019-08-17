@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
@@ -32,6 +33,7 @@ public class EditActivity extends AppCompatActivity {
   private Spinner variableType;
   private Button addVariable;
   private TextView title;
+  private Button renameAction;
   private DataStruct activeDataStruct;
 
   private int currentIndex = 0;
@@ -41,10 +43,11 @@ public class EditActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_edit);
 
-    mainActivity = MainActivity.mainActivity;
+    mainActivity = MainActivity.instance;
     dataStructs  = mainActivity.dataStructs;
 
     title        = (TextView) findViewById(R.id.actionName);
+    renameAction = (Button) findViewById(R.id.rename_action);
     container    = (LinearLayout) findViewById(R.id.container);
     variableName = (EditText) findViewById(R.id.variableName);
     variableType = (Spinner) findViewById(R.id.variableType);
@@ -58,6 +61,13 @@ public class EditActivity extends AppCompatActivity {
     }
 
     title.setText("Editing "+activeDataStruct.name());
+
+    renameAction.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        Toast.makeText(getApplicationContext(), "TODO: add rename dialog.", Toast.LENGTH_SHORT).show();
+      }
+    });
 
     addVariable.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -187,7 +197,7 @@ public class EditActivity extends AppCompatActivity {
     editButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        EditDialog editDialog = new EditDialog(context);
+        EditDialog editDialog = new EditDialog(context, mainActivity);
         editDialog.setVariable(variableName, activeDataStruct.variables());
         editDialog.setView(variableValueText);
         editDialog.show();

@@ -1,6 +1,7 @@
 package org.timecrafters.timecraftersactionconfigurator;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
@@ -9,6 +10,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -22,7 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.timecrafters.timecraftersactionconfigurator.actionSupport.AddActionDialog;
-import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
@@ -31,6 +32,7 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+  static public MainActivity instance;
   private static final int REQUEST_WRITE_PERMISSION = 70;
 
   protected Reader jsonReader;
@@ -38,13 +40,11 @@ public class MainActivity extends AppCompatActivity {
   protected FloatingActionButton addActionButton;
 
   private Switch toggleSwitch;
-
-  static public MainActivity mainActivity;
+  private LinearLayout primaryLayout;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    this.mainActivity = this;
-
+    this.instance = this;
     this.dataStructs = new ArrayList<>();
 
     super.onCreate(savedInstanceState);
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
         newActionDialog();
       }
     });
+    primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
 
     checkPermissions();
     // dataStructs should be populated from checkPermissions()->handleReader()
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
     dataStructs.add(dataStruct);
 
     addAction(dataStruct);
+    saveJSON(addActionButton);
   }
 
   public boolean actionNameIsUnique(String name) {
@@ -93,6 +95,32 @@ public class MainActivity extends AppCompatActivity {
     final LinearLayout parent = new LinearLayout(this);
     parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
     parent.setOrientation(LinearLayout.HORIZONTAL);
+
+    final LinearLayout modifiers = new LinearLayout(this);
+    modifiers.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    modifiers.setOrientation(LinearLayout.VERTICAL);
+
+    // delete button
+    Button delete = new Button(this);
+    delete.setText("delete");
+    delete.setTextColor(getResources().getColor(R.color.deleteButton));
+    delete.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
+    delete.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        showDeleteConfirmation(new Runnable() {
+          @Override
+          public void run() {
+            DataStruct _dataStruct = dataStruct;
+            dataStructs.remove(dataStruct);
+            primaryLayout.removeView(parent);
+            recolor();
+
+            saveJSON(addActionButton);
+          }
+        }, "Are you ABSOLUTELY sure?", "Destroy action \"" + dataStruct.name() + "\" and ALL of its variables?");
+      }
+    });
 
     // Edit button
     Button edit = new Button(this);
@@ -128,10 +156,12 @@ public class MainActivity extends AppCompatActivity {
       }
     });
 
-    parent.addView(edit);
+    modifiers.addView(delete);
+    modifiers.addView(edit);
+    parent.addView(modifiers);
+
     parent.addView(toggle);
 
-    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
     primaryLayout.addView(parent);
 
     recolor();
@@ -185,6 +215,26 @@ public class MainActivity extends AppCompatActivity {
       Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     }
+  }
+
+  private void showDeleteConfirmation(final Runnable runner, String title, String message) {
+    TextView titleView = new TextView(this);
+    titleView.setText(title);
+    titleView.setTextColor(getResources().getColor(R.color.deleteButton));
+    titleView.setTextSize(24);
+    titleView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+
+    AlertDialog.Builder confirmation = new AlertDialog.Builder(this);
+    confirmation.setCustomTitle(titleView);
+    confirmation.setMessage(message);
+    confirmation.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialogInterface, int i) {
+        runner.run();
+      }
+    });
+    confirmation.setNegativeButton("Cancel", null);
+    confirmation.show();
   }
 
   private void populateLayout() {

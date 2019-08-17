@@ -27,9 +27,11 @@ public class EditDialog extends Dialog {
   EditText integerValue;
   EditText stringValue;
   TextView textView;
+  MainActivity mainActivity;
 
-  public EditDialog(@NonNull Context context) {
+  public EditDialog(@NonNull Context context, MainActivity mainActivity) {
     super(context);
+    this.mainActivity = mainActivity;
   }
 
   @Override
@@ -63,7 +65,7 @@ public class EditDialog extends Dialog {
       public void onClick(View view) {
         saveVariable();
         textView.setText(DataStruct.valueOf(variables.get(variableName)).toString());
-        MainActivity.mainActivity.saveJSON(textView, "Updated \""+variableName+"\".");
+        mainActivity.saveJSON(textView, "Updated \""+variableName+"\".");
         dismiss();
       }
     });
