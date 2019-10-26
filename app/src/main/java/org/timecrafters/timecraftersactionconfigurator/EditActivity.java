@@ -37,7 +37,9 @@ public class EditActivity extends AppCompatActivity {
   private Button addVariable;
   private TextView title;
   private Button renameAction;
-  private DataStruct activeDataStruct;
+
+  public  DataStruct activeDataStruct;
+  public  TextView activeVariableName;
 
   private int currentIndex = 0;
 
@@ -45,7 +47,7 @@ public class EditActivity extends AppCompatActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    this.instance = this;
+    EditActivity.instance = this;
 
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_edit);
@@ -210,6 +212,8 @@ public class EditActivity extends AppCompatActivity {
     editButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        EditActivity.instance.activeVariableName = variableNameText;
+
         EditDialog editDialog = new EditDialog(context, mainActivity);
         editDialog.setVariable(variableName, activeDataStruct.variables());
         editDialog.setView(variableValueText);

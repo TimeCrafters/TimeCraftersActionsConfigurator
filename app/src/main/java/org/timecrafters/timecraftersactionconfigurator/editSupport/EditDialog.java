@@ -12,6 +12,7 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.timecrafters.timecraftersactionconfigurator.EditActivity;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.R;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
@@ -22,11 +23,13 @@ import java.util.Map;
 public class EditDialog extends Dialog {
   private String variableName;
   private HashMap<String, String> variables;
+  EditText variable;
   Spinner booleanValue;
   EditText decimalValue;
   EditText integerValue;
   EditText stringValue;
   TextView textView;
+
   MainActivity mainActivity;
 
   public EditDialog(@NonNull Context context, MainActivity mainActivity) {
@@ -45,7 +48,7 @@ public class EditDialog extends Dialog {
     final LinearLayout integerEditor = (LinearLayout) findViewById(R.id.integerEditor);
     final LinearLayout stringEditor = (LinearLayout) findViewById(R.id.stringEditor);
 
-    final TextView title = (TextView) findViewById(R.id.variableName);
+    variable = (EditText) findViewById(R.id.variableName);
 
     booleanValue = (Spinner) findViewById(R.id.booleanValue);
     decimalValue= (EditText) findViewById(R.id.decimalValue);
@@ -64,7 +67,6 @@ public class EditDialog extends Dialog {
       @Override
       public void onClick(View view) {
         saveVariable();
-        textView.setText(DataStruct.valueOf(variables.get(variableName)).toString());
         mainActivity.saveJSON(textView, "Updated \""+variableName+"\".");
         dismiss();
       }
@@ -73,7 +75,7 @@ public class EditDialog extends Dialog {
     String type  = DataStruct.typeOf(variables.get(variableName));
     String value = DataStruct.valueOf(variables.get(variableName)).toString();
 
-    title.setText("Editing "+ variableName);
+    variable.setText(variableName);
 
     switch (type) {
       case "Boolean": {
@@ -157,7 +159,17 @@ public class EditDialog extends Dialog {
       }
     }
 
-    variables.put(variableName, DataStruct.encodeValue(type, value));
+    String newVariableName = variable.getText().toString();
+
+    if (!variableName.equals(newVariableName)) {
+      variables.remove(variableName);
+      variables.put(newVariableName, DataStruct.encodeValue(type, value));
+      EditActivity.instance.activeVariableName.setText("Name: " + variable.getText().toString());
+    } else {
+      variables.put(variableName, DataStruct.encodeValue(type, value));
+    }
+
+    textView.setText(DataStruct.valueOf(variables.get(newVariableName)).toString());
   }
 
   public void setVariable(String variableName, HashMap<String, String> variables) {
