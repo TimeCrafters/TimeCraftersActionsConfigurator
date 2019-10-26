@@ -17,6 +17,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.timecrafters.timecraftersactionconfigurator.actionSupport.RenameActionDialog;
 import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 
@@ -25,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 public class EditActivity extends AppCompatActivity {
+  static public EditActivity instance;
+
   private static final int MAGIC_NUM = 1010;
   private LinearLayout container;
   private MainActivity mainActivity;
@@ -38,8 +41,12 @@ public class EditActivity extends AppCompatActivity {
 
   private int currentIndex = 0;
 
+  public TextView actionName;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    this.instance = this;
+
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_edit);
 
@@ -53,7 +60,7 @@ public class EditActivity extends AppCompatActivity {
     variableType = (Spinner) findViewById(R.id.variableType);
     addVariable  = (Button) findViewById(R.id.add);
 
-    activeDataStruct = dataStructs.get(getIntent().getIntExtra("dataStructsIndex", 0));
+    activeDataStruct = mainActivity.currentDataStruct;
 
     for (Entry<String, String> variable : activeDataStruct.variables().entrySet()) {
       addToList(variable.getKey(), variable.getValue(), currentIndex);
@@ -65,7 +72,7 @@ public class EditActivity extends AppCompatActivity {
     renameAction.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        Toast.makeText(getApplicationContext(), "TODO: add rename dialog.", Toast.LENGTH_SHORT).show();
+        showRenameActionDialog();
       }
     });
 
@@ -94,6 +101,12 @@ public class EditActivity extends AppCompatActivity {
         }
       }
     });
+  }
+
+  private void showRenameActionDialog() {
+    actionName = title;
+    RenameActionDialog renameActionDialog = new RenameActionDialog(this);
+    renameActionDialog.show();
   }
 
   private boolean uniqueName(String text) {

@@ -42,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
   private Switch toggleSwitch;
   private LinearLayout primaryLayout;
 
+  public DataStruct currentDataStruct = null;
+  public Switch currentActionName;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     this.instance = this;
@@ -100,8 +103,11 @@ public class MainActivity extends AppCompatActivity {
     modifiers.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
     modifiers.setOrientation(LinearLayout.VERTICAL);
 
-    // delete button
     Button delete = new Button(this);
+    Button edit = new Button(this);
+    final Switch toggle = new Switch(this);
+
+    // delete button
     delete.setText("delete");
     delete.setTextColor(getResources().getColor(R.color.deleteButton));
     delete.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
@@ -111,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
         showDeleteConfirmation(new Runnable() {
           @Override
           public void run() {
-            DataStruct _dataStruct = dataStruct;
             dataStructs.remove(dataStruct);
             primaryLayout.removeView(parent);
             recolor();
@@ -123,20 +128,19 @@ public class MainActivity extends AppCompatActivity {
     });
 
     // Edit button
-    Button edit = new Button(this);
     edit.setText("Edit");
     edit.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.MATCH_PARENT));
     edit.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        currentDataStruct = dataStruct;
+        currentActionName = toggle;
         Intent intent = new Intent(getBaseContext(), EditActivity.class);
-        intent.putExtra("dataStructsIndex", dataStructs.indexOf(dataStruct));
         startActivity(intent);
       }
     });
 
     // Toggle Button
-    Switch toggle = new Switch(this);
     toggle.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
     toggle.setChecked(dataStruct.enabled());
 
