@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
   private Server server;
   private Connection connection;
 
-  public String HOSTNAME = "192.168.1.33";
+  public String HOSTNAME = "192.168.49.1";
   public int    PORT     = 8962;
 
   private Menu menu;
