@@ -46,7 +46,7 @@ public class Reader {
     return dataStructs;
   }
 
-  private String getDirectory() {
+  static public String getDirectory() {
     return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "FIRST_TC_CONFIG";
   }
 
@@ -93,6 +93,32 @@ public class Reader {
 
     this.loadSuccessful = loadSuccessful;
     return loadSuccessful;
+  }
+
+  static public String rawConfigFile() {
+    File file = new File(Reader.getDirectory() + File.separator + "config.json");
+    StringBuilder text = new StringBuilder();
+
+    if (file.exists()) {
+      try {
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+
+        while ((line = br.readLine()) != null) {
+          text.append(line);
+          text.append('\n');
+        }
+        br.close();
+
+        return text.toString();
+
+      } catch (IOException e) {
+        return null;
+      }
+
+    } else {
+      return null;
+    }
   }
 
   public boolean getLoadSuccess() { return loadSuccessful; }

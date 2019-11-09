@@ -2,17 +2,18 @@ package org.timecrafters.timecraftersactionconfigurator.server;
 
 import android.util.Log;
 
+import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketException;
 
 public class Server {
   private ServerSocket server;
   private int port;
   private Client activeClient;
   private long lastSyncTime = 0;
-  private long syncInterval = 100;
+  private long syncInterval = 250;
 
   private Runnable handleClientRunner;
 
@@ -59,6 +60,7 @@ public class Server {
     while (!isClosed()) {
 
       final Client client = new Client();
+      client.setSyncInterval(syncInterval);
       client.setSocket(this.server.accept());
 
       if (activeClient != null && !activeClient.isClosed()) {
@@ -68,6 +70,7 @@ public class Server {
       } else {
         this.activeClient = client;
         activeClient.puts(activeClient.uuid());
+        activeClient.puts(Reader.rawConfigFile());
 
         Log.i("TACNET", "Client connected!");
 
@@ -75,7 +78,11 @@ public class Server {
           @Override
           public void run() {
             while(activeClient != null && !activeClient.isClosed()) {
-              syncActiveClient(handleClientRunner);
+              if (System.currentTimeMillis() > lastSyncTime + syncInterval) {
+                lastSyncTime = System.currentTimeMillis();
+
+                activeClient.sync(handleClientRunner);
+              }
             }
           }
         }).start();
@@ -84,23 +91,19 @@ public class Server {
     }
   }
 
-  private void syncActiveClient(Runnable runner) {
-    if (System.currentTimeMillis() > lastSyncTime + syncInterval) {
-      lastSyncTime = System.currentTimeMillis();
-
-      activeClient.sync(runner);
-    }
-  }
-
   private void handleClient() {
     if (activeClient != null && !activeClient.isClosed()) {
       String message = activeClient.gets();
 
-      while(message != null) {
-        activeClient.puts(message);
+      /* // ECHO RESPONSE
+        while(message != null) {
+          activeClient.puts(message);
 
-        message = activeClient.gets();
-      }
+          message = activeClient.gets();
+        }
+     */
+
+      activeClient.puts("heartbeat");
     }
   }
 
@@ -109,6 +112,7 @@ public class Server {
       this.activeClient.close();
       this.activeClient = null;
     }
+
     this.server.close();
   }
 

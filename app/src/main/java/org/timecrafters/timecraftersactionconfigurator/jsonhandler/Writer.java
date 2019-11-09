@@ -53,6 +53,22 @@ public class Writer {
     return writeSuccessful;
   }
 
+  static public void overwriteConfigFile(String config) {
+    File file = new File(Reader.getDirectory() + File.separator + "config.json");
+
+    try {
+      BufferedWriter bw = new BufferedWriter(new FileWriter(file, false));
+
+      bw.write(config);
+      bw.newLine();
+      bw.flush();
+
+      bw.close();
+
+    } catch (IOException e) {
+    }
+  }
+
   public boolean writeSucceeded() {
     return writeSuccessful;
   }

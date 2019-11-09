@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class Client {
   private Socket socket;
@@ -24,11 +25,17 @@ public class Client {
   final private Object readQueueLock = new Object();
   final private Object writeQueueLock = new Object();
 
+  private long syncInterval = 100;
+
   public Client() {
     this.uuid = (UUID.randomUUID()).toString();
 
     this.readQueue = new ArrayList<>();
     this.writeQueue = new ArrayList<>();
+  }
+
+  public void setSyncInterval(long milliseconds) {
+    syncInterval = milliseconds;
   }
 
   public void setSocket(Socket socket) throws IOException {
@@ -67,6 +74,10 @@ public class Client {
           } catch (IOException e) {
             Log.e("TACNET", "Client read error: " + e.getMessage());
           }
+
+          try {
+            TimeUnit.MILLISECONDS.sleep(syncInterval);
+          } catch (InterruptedException e) {}
         }
       }
     }).start();
@@ -98,6 +109,10 @@ public class Client {
               }
             }
           }
+
+          try {
+            TimeUnit.MILLISECONDS.sleep(syncInterval);
+          } catch (InterruptedException e) {}
         }
       }
     }).start();
@@ -128,11 +143,11 @@ public class Client {
   }
 
   public boolean isBound() {
-    return this.socket.isBound();
+    return this.socket == null || this.socket.isBound();
   }
 
   public boolean isClosed() {
-    return this.socket.isClosed();
+    return this.socket == null || this.socket.isClosed();
   }
 
   public void write(String message) throws IOException {
@@ -190,6 +205,8 @@ public class Client {
   }
 
   public void close() throws IOException {
-    this.socket.close();
+    if (this.socket != null) {
+      this.socket.close();
+    }
   }
 }

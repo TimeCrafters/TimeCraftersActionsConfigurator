@@ -358,6 +358,12 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
+  public void reloadConfig() {
+    ((LinearLayout) findViewById(R.id.primary_layout)).removeAllViews();
+
+    checkPermissions();
+  }
+
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
@@ -366,7 +372,7 @@ public class MainActivity extends AppCompatActivity {
   }
 
   @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
+  public boolean onOptionsItemSelected(final MenuItem item) {
     // Handle action bar item clicks here. The action bar will
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
@@ -391,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
         }
 
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#008000")));
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
         this.server = null;
       }
 
@@ -413,9 +419,8 @@ public class MainActivity extends AppCompatActivity {
       return true;
     }
 
-    if (id == R.id.action_restart) {
-      finish();
-      startActivity(new Intent(getApplicationContext(), MainActivity.class));
+    if (id == R.id.action_reload) {
+      reloadConfig();
       return true;
     }
 
@@ -424,23 +429,31 @@ public class MainActivity extends AppCompatActivity {
         if (connection == null) {
           item.setTitle("Disconnect");
           this.connection = new Connection(HOSTNAME, PORT);
-          this.connection.connect();
+          this.connection.connect(new Runnable() {
+            @Override
+            public void run() {
+              runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  if (connection.socketError()) {
 
-          if (!this.connection.socketError()) {
-            item.setTitle("Connect");
-            Snackbar.make(addActionButton, this.connection.lastError(), Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
+                    item.setTitle("Connect");
+                    Snackbar.make(addActionButton, connection.lastError(), Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
 
-            this.connection = null;
-          }
+                    connection = null;
+                  }
+                }
+              });
+            }
+          });
 
         } else {
           try {
-            if (this.connection.isClosed()) {
-              this.connection.close();
-              this.connection = null;
-              item.setTitle("Connect");
-            }
+            this.connection.close();
+            this.connection = null;
+            item.setTitle("Connect");
+
           } catch (IOException e) {
             Toast.makeText(this, "Failed to disconnect from server!", Toast.LENGTH_LONG).show();
           }

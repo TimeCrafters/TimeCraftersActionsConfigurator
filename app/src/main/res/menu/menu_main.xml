@@ -3,14 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="org.timecrafters.timecraftersactionconfigurator.MainActivity">
     <item
-        android:id="@+id/action_restart"
-        android:title="@string/action_restart"
+        android:id="@+id/action_reload"
+        android:title="Reload Config"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_server"
         android:checkable="true"
         android:checked="false"
-        android:title="Start Server" />
+        android:title="Server" />
     <item
         android:id="@+id/action_destructive_editing"
         android:checkable="true"
