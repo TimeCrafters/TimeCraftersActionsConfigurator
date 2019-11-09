@@ -7,22 +7,18 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.Editable;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.timecrafters.timecraftersactionconfigurator.actionSupport.RenameActionDialog;
 import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map.Entry;
 
 public class EditActivity extends AppCompatActivity {
@@ -91,7 +87,7 @@ public class EditActivity extends AppCompatActivity {
     addVariable.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        String name = variableName.getText().toString();
+        String name = variableName.getText().toString().trim();
         String type = variableType.getSelectedItem().toString();
 
         if (name.length() > 0) {

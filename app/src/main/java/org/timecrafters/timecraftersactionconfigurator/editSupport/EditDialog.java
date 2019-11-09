@@ -162,12 +162,12 @@ public class EditDialog extends Dialog {
       }
     }
 
-    String newVariableName = variable.getText().toString();
+    String newVariableName = variable.getText().toString().trim();
 
     if (!variableName.equals(newVariableName)) {
       variables.remove(variableName);
       variables.put(newVariableName, DataStruct.encodeValue(type, value));
-      EditActivity.instance.activeVariableName.setText("Name: " + variable.getText().toString());
+      EditActivity.instance.activeVariableName.setText("Name: " + newVariableName);
     } else {
       variables.put(variableName, DataStruct.encodeValue(type, value));
     }

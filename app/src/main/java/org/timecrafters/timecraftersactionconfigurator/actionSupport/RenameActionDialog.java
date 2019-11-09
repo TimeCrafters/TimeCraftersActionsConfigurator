@@ -39,21 +39,23 @@ public class RenameActionDialog extends Dialog {
     updateAction.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        if (actionName.getText().length() > 0) {
-          if (mainActivity.actionNameIsUnique(actionName.getText().toString())) {
-            mainActivity.currentActionName.setText(actionName.getText().toString());
-            mainActivity.currentActionName.setTextOn(actionName.getText().toString());
-            mainActivity.currentActionName.setTextOff(actionName.getText().toString());
+        String name = actionName.getText().toString().trim();
 
-            editActivity.actionName.setText(actionName.getText().toString());
+        if (name.length() > 0) {
+          if (mainActivity.actionNameIsUnique(name)) {
+            mainActivity.currentActionName.setText(name);
+            mainActivity.currentActionName.setTextOn(name);
+            mainActivity.currentActionName.setTextOff(name);
 
-            mainActivity.currentDataStruct.setName(actionName.getText().toString());
+            editActivity.actionName.setText(name);
+
+            mainActivity.currentDataStruct.setName(name);
 
             mainActivity.saveJSON(editActivity.actionName);
 
             dismiss();
           } else {
-            Toast.makeText(mainActivity, "\""+actionName.getText().toString()+"\" already exists!", Toast.LENGTH_LONG).show();
+            Toast.makeText(mainActivity, "\""+ name +"\" already exists!", Toast.LENGTH_LONG).show();
           }
         }
       }
