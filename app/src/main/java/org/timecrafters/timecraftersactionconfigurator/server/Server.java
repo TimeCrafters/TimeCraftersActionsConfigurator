@@ -5,6 +5,7 @@ import android.util.Log;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -70,7 +71,7 @@ public class Server {
         client.close("Too many clients!");
 
       } else {
-        Writer.writeJSON(Writer.getBackupConfigFilePath(), MainActivity.instance.getDataStructs());
+        Writer.writeJSON(Writer.getBackupConfigFilePath(), AppSync.getDataStructs());
 
         this.activeClient = client;
         activeClient.puts(activeClient.uuid());

@@ -13,6 +13,7 @@ import org.timecrafters.timecraftersactionconfigurator.EditActivity;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.R;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 public class RenameActionDialog extends Dialog {
   EditText actionName;
@@ -22,7 +23,7 @@ public class RenameActionDialog extends Dialog {
 
   public RenameActionDialog(@NonNull Context context) {
     super(context);
-    this.mainActivity = MainActivity.instance;
+    this.mainActivity = AppSync.getMainActivity();
     this.editActivity = EditActivity.instance;
   }
 
@@ -40,7 +41,7 @@ public class RenameActionDialog extends Dialog {
       @Override
       public void onClick(View view) {
         if (actionName.getText().length() > 0) {
-          if (mainActivity.actionNameIsUnique(actionName.getText().toString())) {
+          if (AppSync.actionNameIsUnique(actionName.getText().toString())) {
             mainActivity.currentActionName.setText(actionName.getText().toString());
             mainActivity.currentActionName.setTextOn(actionName.getText().toString());
             mainActivity.currentActionName.setTextOff(actionName.getText().toString());
@@ -49,7 +50,7 @@ public class RenameActionDialog extends Dialog {
 
             mainActivity.currentDataStruct.setName(actionName.getText().toString());
 
-            mainActivity.saveJSON(editActivity.actionName);
+            AppSync.saveJSON(editActivity.actionName, "");
 
             dismiss();
           } else {

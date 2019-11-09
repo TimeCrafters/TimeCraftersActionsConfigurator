@@ -31,6 +31,7 @@ import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 import org.timecrafters.timecraftersactionconfigurator.server.Connection;
 import org.timecrafters.timecraftersactionconfigurator.server.Server;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
@@ -38,53 +39,50 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-  static public MainActivity instance;
   private static final int REQUEST_WRITE_PERMISSION = 70;
 
-  protected Reader jsonReader;
-  protected ArrayList<DataStruct> dataStructs;
-  protected FloatingActionButton addActionButton;
-
   private Switch toggleSwitch;
-  private LinearLayout primaryLayout;
+  public LinearLayout primaryLayout;
 
   public DataStruct currentDataStruct = null;
   public Switch currentActionName;
-
-  public boolean serverRunning, permitDestructiveEditing = false;
-  private Server server;
-  private Connection connection;
-
-  public String HOSTNAME = "192.168.1.33";
-  public int    PORT     = 8962;
 
   private Menu menu;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    MainActivity.instance = this;
-    this.dataStructs = new ArrayList<>();
+    if (AppSync.instance == null) {
+      new AppSync();
+    }
+
+    AppSync.instance.mainActivity = this;
 
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
-    this.addActionButton = (FloatingActionButton) findViewById(R.id.fab);
+    FloatingActionButton addActionButton = findViewById(R.id.fab);
 
     addActionButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        newActionDialog();
+        if (AppSync.instance.serverEnabled) {
+          Snackbar.make(view, "Can not add Actions while server is running!", Snackbar.LENGTH_LONG).show();
+
+        } else if (!AppSync.instance.allowDestructiveEditing) {
+          Snackbar.make(view, "Enable Destructive Editing to add Actions", Snackbar.LENGTH_LONG).show();
+
+        } else {
+          newActionDialog();
+        }
       }
     });
-    if (!permitDestructiveEditing)
-      addActionButton.setVisibility(View.INVISIBLE);
 
-    primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
+    primaryLayout = findViewById(R.id.primary_layout);
 
-    checkPermissions();
     // dataStructs should be populated from checkPermissions()->handleReader()
+    checkPermissions();
   }
 
   private void newActionDialog() {
@@ -92,26 +90,7 @@ public class MainActivity extends AppCompatActivity {
     addActionDialog.show();
   }
 
-  public void addNewAction(String name) {
-    DataStruct dataStruct = new DataStruct();
-    dataStruct.setName(name);
-    dataStructs.add(dataStruct);
-
-    addAction(dataStruct);
-    saveJSON(addActionButton);
-  }
-
-  public boolean actionNameIsUnique(String name) {
-    boolean unique = true;
-
-    for (DataStruct dataStruct : dataStructs) {
-      if (dataStruct.name().equals(name)) { unique = false; }
-    }
-
-    return unique;
-  }
-
-  private void addAction(final DataStruct dataStruct) {
+  public void addActionToLayout(final DataStruct dataStruct) {
     // Create items main container <-->
     final LinearLayout parent = new LinearLayout(this);
     parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -132,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
     delete.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        if (!permitDestructiveEditing) {
+        if (!AppSync.instance.allowDestructiveEditing) {
           Snackbar.make(view, "Destructive Editing is disabled, can't delete action.", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
           return;
@@ -141,11 +120,11 @@ public class MainActivity extends AppCompatActivity {
         showDeleteConfirmation(new Runnable() {
           @Override
           public void run() {
-            dataStructs.remove(dataStruct);
+            AppSync.getDataStructs().remove(dataStruct);
             primaryLayout.removeView(parent);
             recolor();
 
-            saveJSON(addActionButton);
+            AppSync.saveJSON();
           }
         }, "Are you ABSOLUTELY sure?", "Destroy action \"" + dataStruct.name() + "\" and ALL of its variables?");
       }
@@ -180,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
         recolor();
 
         dataStruct.setEnabled(b);
-        saveJSON(addActionButton);
+        AppSync.saveJSON();
       }
     });
 
@@ -229,30 +208,6 @@ public class MainActivity extends AppCompatActivity {
     }
   }
 
-  public void saveJSON(View view) {
-    saveJSON(view, "");
-  }
-
-  public void saveJSON(View view, String message) {
-    boolean writeSucceeded = Writer.writeJSON(Writer.getConfigFilePath(), dataStructs);
-
-    if (writeSucceeded) {
-      if (this.connection != null && !this.connection.isClosed()) {
-        this.connection.puts(Writer.toJson(dataStructs));
-      }
-
-      Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_SHORT)
-              .setAction("Action", null).show();
-    } else {
-      Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
-              .setAction("Action", null).show();
-    }
-  }
-
-  public ArrayList<DataStruct> getDataStructs() {
-    return dataStructs;
-  }
-
   private void showDeleteConfirmation(final Runnable runner, String title, String message) {
     TextView titleView = new TextView(this);
     titleView.setText(title);
@@ -274,8 +229,8 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void populateLayout() {
-    for(DataStruct item : dataStructs) {
-      addAction(item);
+    for(DataStruct item : AppSync.getDataStructs()) {
+      addActionToLayout(item);
     }
   }
 
@@ -317,11 +272,6 @@ public class MainActivity extends AppCompatActivity {
               new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
               REQUEST_WRITE_PERMISSION);
     } else {
-      if (permitDestructiveEditing) {
-        addActionButton.setVisibility(View.VISIBLE);
-        addActionButton.setEnabled(true);
-      }
-
       handleReader();
 
       populateLayout();
@@ -334,12 +284,7 @@ public class MainActivity extends AppCompatActivity {
     switch (requestCode) {
       case REQUEST_WRITE_PERMISSION: {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-          if (permitDestructiveEditing) {
-            addActionButton.setVisibility(View.VISIBLE);
-            addActionButton.setEnabled(true);
-          }
-
-          Snackbar.make(addActionButton, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
+          Snackbar.make(primaryLayout, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
           handleReader();
 
@@ -347,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
           populateLayoutWithErrorMessage();
-          Snackbar.make(addActionButton, "Read/Write Permission is required!", Snackbar.LENGTH_LONG)
+          Snackbar.make(primaryLayout, "Read/Write Permission is required!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
         }
       }
@@ -355,15 +300,15 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void handleReader() {
-    this.jsonReader = new Reader(this);
+    Reader jsonReader = new Reader(this);
 
     if (jsonReader.getLoadSuccess()) {
-      this.dataStructs = jsonReader.dataStructs();
+      AppSync.instance.dataStructs = jsonReader.dataStructs();
 
-      Snackbar.make(addActionButton, "Loaded from JSON.", Snackbar.LENGTH_LONG)
+      Snackbar.make(primaryLayout, "Loaded from JSON.", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     } else {
-      Snackbar.make(addActionButton, "Failed to load JSON.", Snackbar.LENGTH_LONG)
+      Snackbar.make(primaryLayout, "Failed to load JSON.", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     }
   }
@@ -390,29 +335,28 @@ public class MainActivity extends AppCompatActivity {
     int id = item.getItemId();
 
     if (id == R.id.action_server) {
-      serverRunning = !serverRunning;
-      item.setChecked(serverRunning);
+      AppSync.instance.serverEnabled = !AppSync.instance.serverEnabled;
+      item.setChecked(AppSync.instance.serverEnabled);
 
-      if (serverRunning) {
+      if (AppSync.instance.serverEnabled) {
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#f50000")));
         try {
-          this.server = new Server(PORT);
-          this.server.start();
+          AppSync.instance.server = new Server(AppSync.PORT);
+          AppSync.instance.server.start();
           primaryLayout.removeAllViews();
 
-          if (permitDestructiveEditing) {
-            permitDestructiveEditing = false;
+          if (AppSync.instance.allowDestructiveEditing) {
+            AppSync.instance.allowDestructiveEditing = false;
 
-            addActionButton.setVisibility(View.INVISIBLE);
-            menu.findItem(R.id.action_destructive_editing).setChecked(permitDestructiveEditing);
+            menu.findItem(R.id.action_destructive_editing).setChecked(AppSync.instance.allowDestructiveEditing);
           }
 
           Snackbar.make(primaryLayout, "Server running, local editing is disabled!", Snackbar.LENGTH_LONG).show();
 
         } catch (IOException e) {
-          server = null;
-          serverRunning = false;
-          item.setChecked(serverRunning);
+          AppSync.instance.server = null;
+          AppSync.instance.serverEnabled = false;
+          item.setChecked(AppSync.instance.serverEnabled);
 
           getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
 
@@ -423,38 +367,32 @@ public class MainActivity extends AppCompatActivity {
 
       } else {
         try {
-          this.server.stop();
+          AppSync.getServer().stop();
         } catch (IOException e) {
         }
 
         reloadConfig();
 
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
-        this.server = null;
+        AppSync.instance.server = null;
       }
 
       return true;
     }
 
     if (id == R.id.action_destructive_editing) {
-      permitDestructiveEditing = !permitDestructiveEditing;
+      AppSync.instance.allowDestructiveEditing = !AppSync.instance.allowDestructiveEditing;
 
-      if (server != null) { permitDestructiveEditing = false; }
+      if (AppSync.getServer() != null) { AppSync.instance.allowDestructiveEditing = false; }
 
-      item.setChecked(permitDestructiveEditing);
-
-      if (permitDestructiveEditing) {
-        addActionButton.setVisibility(View.VISIBLE);
-      } else {
-        addActionButton.setVisibility(View.INVISIBLE);
-      }
+      item.setChecked(AppSync.instance.allowDestructiveEditing);
 
       Snackbar.make(primaryLayout, "Destructive editing is " + (item.isChecked() ? "On" : "Off"), Snackbar.LENGTH_LONG).show();
       return true;
     }
 
     if (id == R.id.action_reload) {
-      if (server == null) {
+      if (AppSync.instance.server == null) {
         reloadConfig();
       } else {
         Snackbar.make(primaryLayout, "Can not reload config while server is running!", Snackbar.LENGTH_LONG).show();
@@ -463,23 +401,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     if (id == R.id.action_connection) {
-      if (server == null) {
-        if (connection == null) {
+      if (AppSync.getServer() == null) {
+        if (AppSync.getConnection() == null) {
           item.setTitle("Disconnect");
-          this.connection = new Connection(HOSTNAME, PORT);
-          this.connection.connect(new Runnable() {
+          AppSync.instance.connection = new Connection(AppSync.HOSTNAME, AppSync.PORT);
+          AppSync.instance.connection.connect(new Runnable() {
             @Override
             public void run() {
               runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                  if (connection.socketError()) {
+                  if (AppSync.instance.connection.socketError()) {
 
                     item.setTitle("Connect");
-                    Snackbar.make(addActionButton, connection.lastError(), Snackbar.LENGTH_LONG)
+                    Snackbar.make(primaryLayout, AppSync.getConnection().lastError(), Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
 
-                    connection = null;
+                    AppSync.instance.connection = null;
                   }
                 }
               });
@@ -488,8 +426,8 @@ public class MainActivity extends AppCompatActivity {
 
         } else {
           try {
-            this.connection.close();
-            this.connection = null;
+            AppSync.getConnection().close();
+            AppSync.instance.connection = null;
             item.setTitle("Connect");
             Snackbar.make(primaryLayout, "Disconnected from server.", Snackbar.LENGTH_SHORT).show();
 

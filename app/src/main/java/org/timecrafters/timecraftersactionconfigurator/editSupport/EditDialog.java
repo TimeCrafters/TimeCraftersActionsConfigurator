@@ -16,6 +16,7 @@ import org.timecrafters.timecraftersactionconfigurator.EditActivity;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.R;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class EditDialog extends Dialog {
     final LinearLayout stringEditor = (LinearLayout) findViewById(R.id.stringEditor);
 
     variable = (EditText) findViewById(R.id.variableName);
-    if (!MainActivity.instance.permitDestructiveEditing) {
+    if (!AppSync.instance.allowDestructiveEditing) {
       variable.setEnabled(false);
     }
 
@@ -70,7 +71,7 @@ public class EditDialog extends Dialog {
       @Override
       public void onClick(View view) {
         saveVariable();
-        mainActivity.saveJSON(textView, "Updated \""+variableName+"\".");
+        AppSync.saveJSON(textView, "Updated \""+variableName+"\".");
         dismiss();
       }
     });

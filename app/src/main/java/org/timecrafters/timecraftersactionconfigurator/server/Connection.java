@@ -5,6 +5,7 @@ import android.util.Log;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -82,10 +83,10 @@ public class Connection {
           Log.i("TACNET", "Got valid json: " + message);
            Writer.overwriteConfigFile(message);
 
-           MainActivity.instance.runOnUiThread(new Runnable() {
+          AppSync.getMainActivity().runOnUiThread(new Runnable() {
              @Override
              public void run() {
-               MainActivity.instance.reloadConfig();
+               AppSync.getMainActivity().reloadConfig();
              }
            });
         }

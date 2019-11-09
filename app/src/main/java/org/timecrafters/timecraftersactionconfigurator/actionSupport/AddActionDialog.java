@@ -12,6 +12,7 @@ import android.widget.Toast;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.R;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 public class AddActionDialog extends Dialog {
     EditText actionName;
@@ -35,8 +36,8 @@ public class AddActionDialog extends Dialog {
             @Override
             public void onClick(View view) {
                 if (actionName.getText().length() > 0) {
-                    if (mainActivity.actionNameIsUnique(actionName.getText().toString())) {
-                        mainActivity.addNewAction(actionName.getText().toString());
+                    if (AppSync.actionNameIsUnique(actionName.getText().toString())) {
+                        AppSync.addNewAction(actionName.getText().toString());
                         dismiss();
                     } else {
                         Toast.makeText(mainActivity, "\""+actionName.getText().toString()+"\" already exists!", Toast.LENGTH_LONG).show();
