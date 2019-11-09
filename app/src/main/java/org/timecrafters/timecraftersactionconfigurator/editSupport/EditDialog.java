@@ -49,6 +49,9 @@ public class EditDialog extends Dialog {
     final LinearLayout stringEditor = (LinearLayout) findViewById(R.id.stringEditor);
 
     variable = (EditText) findViewById(R.id.variableName);
+    if (!MainActivity.instance.permitDestructiveEditing) {
+      variable.setEnabled(false);
+    }
 
     booleanValue = (Spinner) findViewById(R.id.booleanValue);
     decimalValue= (EditText) findViewById(R.id.decimalValue);

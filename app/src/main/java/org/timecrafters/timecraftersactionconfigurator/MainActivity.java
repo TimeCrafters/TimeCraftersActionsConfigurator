@@ -4,7 +4,9 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -27,8 +29,12 @@ import org.timecrafters.timecraftersactionconfigurator.actionSupport.AddActionDi
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
+import org.timecrafters.timecraftersactionconfigurator.server.Connection;
+import org.timecrafters.timecraftersactionconfigurator.server.Server;
+
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -44,6 +50,13 @@ public class MainActivity extends AppCompatActivity {
 
   public DataStruct currentDataStruct = null;
   public Switch currentActionName;
+
+  public boolean serverRunning, permitDestructiveEditing = false;
+  private Server server;
+  private Connection connection;
+
+  public String HOSTNAME = "192.168.1.3";
+  public int    PORT     = 8962;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +76,9 @@ public class MainActivity extends AppCompatActivity {
         newActionDialog();
       }
     });
+    if (!permitDestructiveEditing)
+      addActionButton.setVisibility(View.INVISIBLE);
+
     primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
 
     checkPermissions();
@@ -114,6 +130,12 @@ public class MainActivity extends AppCompatActivity {
     delete.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        if (!permitDestructiveEditing) {
+          Snackbar.make(view, "Destructive Editing is disabled, can't delete action.", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+          return;
+        }
+
         showDeleteConfirmation(new Runnable() {
           @Override
           public void run() {
@@ -245,13 +267,6 @@ public class MainActivity extends AppCompatActivity {
     for(DataStruct item : dataStructs) {
       addAction(item);
     }
-
-//    LinearLayout padding = new LinearLayout(this);
-//    padding.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 350));
-//    padding.setOrientation(LinearLayout.HORIZONTAL);
-////    padding.setBackgroundColor(99550055);
-//    LinearLayout primaryLayout = (LinearLayout) findViewById(R.id.primary_layout);
-//    primaryLayout.addView(padding);
   }
 
   private void populateLayoutWithErrorMessage() {
@@ -292,8 +307,10 @@ public class MainActivity extends AppCompatActivity {
               new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
               REQUEST_WRITE_PERMISSION);
     } else {
-      addActionButton.setVisibility(View.VISIBLE);
-      addActionButton.setEnabled(true);
+      if (permitDestructiveEditing) {
+        addActionButton.setVisibility(View.VISIBLE);
+        addActionButton.setEnabled(true);
+      }
 
       handleReader();
 
@@ -307,8 +324,10 @@ public class MainActivity extends AppCompatActivity {
     switch (requestCode) {
       case REQUEST_WRITE_PERMISSION: {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-          addActionButton.setVisibility(View.VISIBLE);
-          addActionButton.setEnabled(true);
+          if (permitDestructiveEditing) {
+            addActionButton.setVisibility(View.VISIBLE);
+            addActionButton.setEnabled(true);
+          }
 
           Snackbar.make(addActionButton, "Thank you for permission, have a nice day!", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
@@ -353,15 +372,83 @@ public class MainActivity extends AppCompatActivity {
     // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
 
-    //noinspection SimplifiableIfStatement
-    if (id == R.id.action_settings) {
-      Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
+    if (id == R.id.action_server) {
+      serverRunning = !serverRunning;
+      item.setChecked(serverRunning);
+
+      if (serverRunning) {
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#f50000")));
+        try {
+          this.server = new Server(PORT);
+          this.server.start();
+        } catch (IOException e) {
+        }
+        // TODO: Lock GUI
+
+      } else {
+        try {
+          this.server.stop();
+        } catch (IOException e) {
+        }
+
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#008000")));
+        this.server = null;
+      }
+
+      Toast.makeText(this, "Server is " + item.isChecked(), Toast.LENGTH_SHORT).show();
       return true;
     }
+
+    if (id == R.id.action_destructive_editing) {
+      permitDestructiveEditing = !permitDestructiveEditing;
+      item.setChecked(permitDestructiveEditing);
+
+      if (permitDestructiveEditing) {
+        addActionButton.setVisibility(View.VISIBLE);
+      } else {
+        addActionButton.setVisibility(View.INVISIBLE);
+      }
+
+      Toast.makeText(this, "Destructive editing is " + item.isChecked(), Toast.LENGTH_SHORT).show();
+      return true;
+    }
+
     if (id == R.id.action_restart) {
       finish();
       startActivity(new Intent(getApplicationContext(), MainActivity.class));
       return true;
+    }
+
+    if (id == R.id.action_connection) {
+      if (server == null) {
+        if (connection == null) {
+          item.setTitle("Disconnect");
+          this.connection = new Connection(HOSTNAME, PORT);
+          this.connection.connect();
+
+          if (!this.connection.socketError()) {
+            item.setTitle("Connect");
+            Snackbar.make(addActionButton, this.connection.lastError(), Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+
+            this.connection = null;
+          }
+
+        } else {
+          try {
+            if (this.connection.isClosed()) {
+              this.connection.close();
+              this.connection = null;
+              item.setTitle("Connect");
+            }
+          } catch (IOException e) {
+            Toast.makeText(this, "Failed to disconnect from server!", Toast.LENGTH_LONG).show();
+          }
+        }
+
+      } else {
+        Toast.makeText(this, "Can't connect to self!", Toast.LENGTH_SHORT).show();
+      }
     }
 
     return super.onOptionsItemSelected(item);

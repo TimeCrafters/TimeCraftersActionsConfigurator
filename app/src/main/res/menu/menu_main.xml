@@ -3,13 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="org.timecrafters.timecraftersactionconfigurator.MainActivity">
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
+        android:id="@+id/action_restart"
+        android:title="@string/action_restart"
         app:showAsAction="never" />
     <item
-        android:id="@+id/action_restart"
-        android:orderInCategory="100"
-        android:title="@string/action_restart"
-        app:showAsAction="never"/>
+        android:id="@+id/action_server"
+        android:checkable="true"
+        android:checked="false"
+        android:title="Start Server" />
+    <item
+        android:id="@+id/action_destructive_editing"
+        android:checkable="true"
+        android:checked="false"
+        android:title="Destructive Editing" />
+    <item
+        android:id="@+id/action_connection"
+        android:title="Connect" />
 </menu>

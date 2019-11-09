@@ -55,6 +55,10 @@ public class EditActivity extends AppCompatActivity {
     mainActivity = MainActivity.instance;
     dataStructs  = mainActivity.dataStructs;
 
+    if (!mainActivity.permitDestructiveEditing) {
+      ((LinearLayout) findViewById(R.id.add_variable_form)).setVisibility(View.INVISIBLE);
+    }
+
     title        = (TextView) findViewById(R.id.actionName);
     renameAction = (Button) findViewById(R.id.rename_action);
     container    = (LinearLayout) findViewById(R.id.container);
@@ -74,6 +78,12 @@ public class EditActivity extends AppCompatActivity {
     renameAction.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        if (!mainActivity.permitDestructiveEditing) {
+          Snackbar.make(view, "Destructive Editing is disabled, can't rename action.", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+          return;
+        }
+
         showRenameActionDialog();
       }
     });
@@ -172,15 +182,21 @@ public class EditActivity extends AppCompatActivity {
     deleteButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        if (!mainActivity.permitDestructiveEditing) {
+          Snackbar.make(view, "Destructive Editing is disabled, can't delete variable.", Snackbar.LENGTH_LONG)
+                  .setAction("Action", null).show();
+          return;
+        }
+
         Runnable data = new Runnable() {
           public void run() {
-          LinearLayout parent = ((LinearLayout) findViewById(finalIndex * MAGIC_NUM));
-          LinearLayout container = ((LinearLayout) findViewById(R.id.container));
-          container.removeView(parent);
+            LinearLayout parent = ((LinearLayout) findViewById(finalIndex * MAGIC_NUM));
+            LinearLayout container = ((LinearLayout) findViewById(R.id.container));
+            container.removeView(parent);
 
-          activeDataStruct.variables().remove(variableName);
-          mainActivity.saveJSON(container, "Deleted \"" + variableName + "\".");
-          recolorParents();
+            activeDataStruct.variables().remove(variableName);
+            mainActivity.saveJSON(container, "Deleted \"" + variableName + "\".");
+            recolorParents();
         }};
 
         showConfirmation(data, "Delete \""+variableName+"\"?", "Are you sure you want to delete \""+variableName+"\"?");
