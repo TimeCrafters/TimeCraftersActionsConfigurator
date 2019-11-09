@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
   public String HOSTNAME = "192.168.1.3";
   public int    PORT     = 8962;
 
+  private Menu menu;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     MainActivity.instance = this;
@@ -235,6 +237,10 @@ public class MainActivity extends AppCompatActivity {
     Writer writer = new Writer(dataStructs);
 
     if (writer.writeSucceeded()) {
+      if (this.connection != null && !this.connection.isClosed()) {
+        this.connection.syncToServer();
+      }
+
       Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_SHORT)
               .setAction("Action", null).show();
     } else {
@@ -367,6 +373,7 @@ public class MainActivity extends AppCompatActivity {
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
+    this.menu = menu;
     getMenuInflater().inflate(R.menu.menu_main, menu);
     return true;
   }
@@ -387,9 +394,28 @@ public class MainActivity extends AppCompatActivity {
         try {
           this.server = new Server(PORT);
           this.server.start();
+          primaryLayout.removeAllViews();
+
+          if (permitDestructiveEditing) {
+            permitDestructiveEditing = false;
+
+            addActionButton.setVisibility(View.INVISIBLE);
+            menu.findItem(R.id.action_destructive_editing).setChecked(permitDestructiveEditing);
+          }
+
+          Snackbar.make(primaryLayout, "Server running, local editing is disabled!", Snackbar.LENGTH_LONG).show();
+
         } catch (IOException e) {
+          server = null;
+          serverRunning = false;
+          item.setChecked(serverRunning);
+
+          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+
+          Snackbar.make(primaryLayout, "Server failed to start: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
+
+          reloadConfig();
         }
-        // TODO: Lock GUI
 
       } else {
         try {
@@ -397,16 +423,20 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
         }
 
+        reloadConfig();
+
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
         this.server = null;
       }
 
-      Toast.makeText(this, "Server is " + item.isChecked(), Toast.LENGTH_SHORT).show();
       return true;
     }
 
     if (id == R.id.action_destructive_editing) {
       permitDestructiveEditing = !permitDestructiveEditing;
+
+      if (server != null) { permitDestructiveEditing = false; }
+
       item.setChecked(permitDestructiveEditing);
 
       if (permitDestructiveEditing) {
@@ -415,12 +445,16 @@ public class MainActivity extends AppCompatActivity {
         addActionButton.setVisibility(View.INVISIBLE);
       }
 
-      Toast.makeText(this, "Destructive editing is " + item.isChecked(), Toast.LENGTH_SHORT).show();
+      Snackbar.make(primaryLayout, "Destructive editing is " + (item.isChecked() ? "On" : "Off"), Snackbar.LENGTH_LONG).show();
       return true;
     }
 
     if (id == R.id.action_reload) {
-      reloadConfig();
+      if (server == null) {
+        reloadConfig();
+      } else {
+        Snackbar.make(primaryLayout, "Can not reload config while server is running!", Snackbar.LENGTH_LONG).show();
+      }
       return true;
     }
 
@@ -453,14 +487,15 @@ public class MainActivity extends AppCompatActivity {
             this.connection.close();
             this.connection = null;
             item.setTitle("Connect");
+            Snackbar.make(primaryLayout, "Disconnected from server.", Snackbar.LENGTH_SHORT).show();
 
           } catch (IOException e) {
-            Toast.makeText(this, "Failed to disconnect from server!", Toast.LENGTH_LONG).show();
+            Snackbar.make(primaryLayout, "Failed to disconnect from server!", Snackbar.LENGTH_LONG).show();
           }
         }
 
       } else {
-        Toast.makeText(this, "Can't connect to self!", Toast.LENGTH_SHORT).show();
+        Snackbar.make(primaryLayout, "Can't connect to self!", Snackbar.LENGTH_LONG).show();
       }
     }
 

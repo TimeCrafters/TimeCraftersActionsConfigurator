@@ -2,7 +2,9 @@ package org.timecrafters.timecraftersactionconfigurator.server;
 
 import android.util.Log;
 
+import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
+import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -102,6 +104,16 @@ public class Server {
           message = activeClient.gets();
         }
      */
+      if (message != null) {
+        if (
+                message.length() > 4 && message.charAt(0) == "[".toCharArray()[0] &&
+                        message.charAt(message.length() - 1) == "]".toCharArray()[0]
+        ) {
+          // write json to file
+          Log.i("TACNET", "Got valid json: " + message);
+          Writer.overwriteConfigFile(message);
+        }
+      }
 
       activeClient.puts("heartbeat");
     }

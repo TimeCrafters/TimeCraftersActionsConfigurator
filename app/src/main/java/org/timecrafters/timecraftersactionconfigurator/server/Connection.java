@@ -3,6 +3,7 @@ package org.timecrafters.timecraftersactionconfigurator.server;
 import android.util.Log;
 
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
+import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 
 import java.io.IOException;
@@ -19,6 +20,9 @@ public class Connection {
   private long syncInterval = 250;
 
   private Runnable connectionHandlingRunner;
+  private boolean syncToServer = false;
+  private long lastConfigSync = 0;
+  private long configSyncInterval = 3_000;
 
   public Connection(String hostname, int port) {
     this.hostname = hostname;
@@ -87,16 +91,26 @@ public class Connection {
         }
       }
 
-      client.puts("heartbeat");
+      if (syncToServer && System.currentTimeMillis() > lastConfigSync + configSyncInterval) {
+        puts(Reader.rawConfigFile());
+        syncToServer = false;
+        lastConfigSync = System.currentTimeMillis();
+      } else {
+        client.puts("heartbeat");
+      }
     }
   }
 
-  public void write(String message) throws IOException {
-    this.client.write(message);
+  public void syncToServer() {
+    syncToServer = true;
   }
 
-  public String read() throws IOException {
-    return this.client.read();
+  public void puts(String message) {
+    this.client.puts(message);
+  }
+
+  public String gets() {
+    return this.client.gets();
   }
 
   public boolean isClosed() {
