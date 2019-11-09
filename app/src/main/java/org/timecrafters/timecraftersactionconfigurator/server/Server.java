@@ -70,6 +70,8 @@ public class Server {
         client.close("Too many clients!");
 
       } else {
+        Writer.writeJSON(Writer.getBackupConfigFilePath(), MainActivity.instance.getDataStructs());
+
         this.activeClient = client;
         activeClient.puts(activeClient.uuid());
         activeClient.puts(Reader.rawConfigFile());
@@ -97,13 +99,6 @@ public class Server {
     if (activeClient != null && !activeClient.isClosed()) {
       String message = activeClient.gets();
 
-      /* // ECHO RESPONSE
-        while(message != null) {
-          activeClient.puts(message);
-
-          message = activeClient.gets();
-        }
-     */
       if (message != null) {
         if (
                 message.length() > 4 && message.charAt(0) == "[".toCharArray()[0] &&

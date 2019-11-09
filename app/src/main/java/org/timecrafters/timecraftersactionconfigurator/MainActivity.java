@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
   private Server server;
   private Connection connection;
 
-  public String HOSTNAME = "192.168.1.3";
+  public String HOSTNAME = "192.168.1.33";
   public int    PORT     = 8962;
 
   private Menu menu;
@@ -234,11 +234,11 @@ public class MainActivity extends AppCompatActivity {
   }
 
   public void saveJSON(View view, String message) {
-    Writer writer = new Writer(dataStructs);
+    boolean writeSucceeded = Writer.writeJSON(Writer.getConfigFilePath(), dataStructs);
 
-    if (writer.writeSucceeded()) {
+    if (writeSucceeded) {
       if (this.connection != null && !this.connection.isClosed()) {
-        this.connection.syncToServer();
+        this.connection.puts(Writer.toJson(dataStructs));
       }
 
       Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_SHORT)
@@ -247,6 +247,10 @@ public class MainActivity extends AppCompatActivity {
       Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
               .setAction("Action", null).show();
     }
+  }
+
+  public ArrayList<DataStruct> getDataStructs() {
+    return dataStructs;
   }
 
   private void showDeleteConfirmation(final Runnable runner, String title, String message) {

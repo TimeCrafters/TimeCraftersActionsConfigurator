@@ -91,13 +91,7 @@ public class Connection {
         }
       }
 
-      if (syncToServer && System.currentTimeMillis() > lastConfigSync + configSyncInterval) {
-        puts(Reader.rawConfigFile());
-        syncToServer = false;
-        lastConfigSync = System.currentTimeMillis();
-      } else {
-        client.puts("heartbeat");
-      }
+      client.puts("heartbeat");
     }
   }
 
