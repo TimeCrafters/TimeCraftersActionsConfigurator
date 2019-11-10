@@ -48,7 +48,7 @@ public class Connection {
       @Override
       public void run() {
         try {
-          client.setSocket(new Socket(hostname, port));
+          client.setSocket(new Socket());
           Log.i("TACNET", "Connected to: " + hostname + ":" + port);
 
           while(client != null && !client.isClosed()) {

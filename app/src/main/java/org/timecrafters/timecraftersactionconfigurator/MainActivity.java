@@ -82,7 +82,9 @@ public class MainActivity extends AppCompatActivity {
     primaryLayout = findViewById(R.id.primary_layout);
 
     // dataStructs should be populated from checkPermissions()->handleReader()
-    checkPermissions();
+    if (AppSync.getServer() == null) {
+      checkPermissions();
+    }
   }
 
   private void newActionDialog() {
@@ -324,6 +326,19 @@ public class MainActivity extends AppCompatActivity {
     // Inflate the menu; this adds items to the action bar if it is present.
     this.menu = menu;
     getMenuInflater().inflate(R.menu.menu_main, menu);
+
+    if (AppSync.instance.serverEnabled) {
+      this.menu.findItem(R.id.action_server).setChecked(true);
+    }
+
+    if (AppSync.instance.allowDestructiveEditing) {
+      this.menu.findItem(R.id.action_destructive_editing).setChecked(true);
+    }
+
+    if (AppSync.getConnection() != null) {
+      this.menu.findItem(R.id.action_connection).setTitle("Disconnect");
+    }
+
     return true;
   }
 
