@@ -21,9 +21,8 @@ public class Connection {
   private long syncInterval = 250;
 
   private Runnable connectionHandlingRunner;
-  private boolean syncToServer = false;
-  private long lastConfigSync = 0;
-  private long configSyncInterval = 3_000;
+  private long lastHeartBeatSent = 0;
+  private long heartBeatInterval = 3_000;
 
   private String TAG = "TACNET|Connection";
 
@@ -94,14 +93,21 @@ public class Connection {
         }
       }
 
-      client.puts(Client.PROTOCOL_HEARTBEAT);
+      if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
+        lastHeartBeatSent = System.currentTimeMillis();
+
+        client.puts(Client.PROTOCOL_HEARTBEAT);
+      }
+
+      try {
+        Thread.sleep(syncInterval);
+      } catch (InterruptedException e) {
+        // Failed to sleep I suppose.
+      }
+
     } else {
       client = null;
     }
-  }
-
-  public void syncToServer() {
-    syncToServer = true;
   }
 
   public void puts(String message) {
@@ -112,11 +118,13 @@ public class Connection {
     return this.client.gets();
   }
 
+  public Client getClient() {
+    return client;
+  }
+
   public boolean isClosed() {
     return this.client == null || this.client.isClosed();
   }
-  public boolean hasConnected() { return this.client != null && this.client.isConnected(); }
-
   public boolean socketError() {
     return socketError;
   }

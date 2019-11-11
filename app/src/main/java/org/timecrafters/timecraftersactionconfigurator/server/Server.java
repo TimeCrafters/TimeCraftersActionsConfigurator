@@ -25,6 +25,9 @@ public class Server {
 
   private Runnable handleClientRunner;
 
+  private long lastHeartBeatSent = 0;
+  private long heartBeatInterval = 3_000;
+
   public Server(int port) throws IOException {
     this.server = new ServerSocket();
     this.port = port;
@@ -96,6 +99,12 @@ public class Server {
                 activeClient.sync(handleClientRunner);
                 updateNetStats();
               }
+
+              try {
+                Thread.sleep(syncInterval);
+              } catch (InterruptedException e) {
+                // Failed to sleep, i guess.
+              }
             }
 
             updateNetStats();
@@ -129,7 +138,11 @@ public class Server {
         }
       }
 
-      activeClient.puts(Client.PROTOCOL_HEARTBEAT);
+      if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
+        lastHeartBeatSent = System.currentTimeMillis();
+
+        activeClient.puts(Client.PROTOCOL_HEARTBEAT);
+      }
     }
   }
 

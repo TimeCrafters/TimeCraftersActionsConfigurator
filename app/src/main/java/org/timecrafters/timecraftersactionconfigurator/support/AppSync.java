@@ -14,7 +14,7 @@ import java.util.Timer;
 
 public class AppSync {
   public static AppSync instance;
-  final public static String HOSTNAME = "192.168.1.3";//"192.168.49.1";
+  final public static String HOSTNAME = "192.168.1.128";//"192.168.1.3";//"192.168.49.1";
   final public static int    PORT     = 8962;
 
   public Server server;

@@ -50,7 +50,7 @@ public class UIController extends TimerTask {
 
   private void controlConnectionMode() {
     if (!AppSync.getConnection().isClosed()) {
-      if (AppSync.getConnection().hasConnected()) {
+      if (AppSync.getConnection().getClient().getPacketsReceived() > 1) {
         setupActionBarColor(AppSync.getMainActivity().getResources().getColor(R.color.colorConnectionActive));
 
         if (!shownClientConnected) {

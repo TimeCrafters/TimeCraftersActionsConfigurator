@@ -363,33 +363,38 @@ public class MainActivity extends AppCompatActivity {
 
     if (id == R.id.action_server) {
       AppSync.instance.serverEnabled = !AppSync.instance.serverEnabled;
-      item.setChecked(AppSync.instance.serverEnabled);
 
       if (AppSync.instance.serverEnabled) {
-        try {
-          AppSync.instance.server = new Server(AppSync.PORT);
-          AppSync.instance.server.start();
-          primaryLayout.removeAllViews();
-          populateServerDataLayout();
+        if (AppSync.getConnection() == null) {
+          try {
+            AppSync.instance.server = new Server(AppSync.PORT);
+            AppSync.instance.server.start();
+            primaryLayout.removeAllViews();
+            populateServerDataLayout();
 
 
-          if (AppSync.instance.allowDestructiveEditing) {
-            AppSync.instance.allowDestructiveEditing = false;
+            if (AppSync.instance.allowDestructiveEditing) {
+              AppSync.instance.allowDestructiveEditing = false;
 
-            menu.findItem(R.id.action_destructive_editing).setChecked(AppSync.instance.allowDestructiveEditing);
+              menu.findItem(R.id.action_destructive_editing).setChecked(AppSync.instance.allowDestructiveEditing);
+            }
+
+            Snackbar.make(primaryLayout, "Server running, local editing is disabled!", Snackbar.LENGTH_LONG).show();
+
+          } catch (IOException e) {
+            AppSync.instance.server = null;
+            AppSync.instance.serverEnabled = false;
+            isServerDataViewReady = false;
+            item.setChecked(AppSync.instance.serverEnabled);
+
+            Snackbar.make(primaryLayout, "Server failed to start: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
+
+            reloadConfig();
           }
 
-          Snackbar.make(primaryLayout, "Server running, local editing is disabled!", Snackbar.LENGTH_LONG).show();
-
-        } catch (IOException e) {
-          AppSync.instance.server = null;
+        } else {
           AppSync.instance.serverEnabled = false;
-          isServerDataViewReady = false;
-          item.setChecked(AppSync.instance.serverEnabled);
-
-          Snackbar.make(primaryLayout, "Server failed to start: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
-
-          reloadConfig();
+          Snackbar.make(primaryLayout, "Can't start server while connected to another server!", Snackbar.LENGTH_LONG).show();
         }
 
       } else {
@@ -404,6 +409,7 @@ public class MainActivity extends AppCompatActivity {
         isServerDataViewReady = false;
       }
 
+      item.setChecked(AppSync.instance.serverEnabled);
       return true;
     }
 
