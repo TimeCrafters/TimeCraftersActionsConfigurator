@@ -94,7 +94,7 @@ public class Connection {
         }
       }
 
-      client.puts("heartbeat");
+      client.puts(Client.PROTOCOL_HEARTBEAT);
     } else {
       client = null;
     }

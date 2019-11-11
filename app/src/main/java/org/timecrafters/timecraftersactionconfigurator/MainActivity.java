@@ -51,6 +51,13 @@ public class MainActivity extends AppCompatActivity {
 
   private String TAG = "TACNET|UI";
 
+  private int serverClientStatusView  = View.generateViewId();
+  private int serverPacketInView  = View.generateViewId();
+  private int serverPacketOutView = View.generateViewId();
+  private int serverDataInView    = View.generateViewId();
+  private int serverDataOutView   = View.generateViewId();
+  private boolean isServerDataViewReady = false;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -87,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
     // dataStructs should be populated from checkPermissions()->handleReader()
     if (AppSync.getServer() == null) {
       checkPermissions();
+    } else {
+      populateServerDataLayout();
     }
   }
 
@@ -361,6 +370,8 @@ public class MainActivity extends AppCompatActivity {
           AppSync.instance.server = new Server(AppSync.PORT);
           AppSync.instance.server.start();
           primaryLayout.removeAllViews();
+          populateServerDataLayout();
+
 
           if (AppSync.instance.allowDestructiveEditing) {
             AppSync.instance.allowDestructiveEditing = false;
@@ -373,6 +384,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
           AppSync.instance.server = null;
           AppSync.instance.serverEnabled = false;
+          isServerDataViewReady = false;
           item.setChecked(AppSync.instance.serverEnabled);
 
           Snackbar.make(primaryLayout, "Server failed to start: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
@@ -389,6 +401,7 @@ public class MainActivity extends AppCompatActivity {
         reloadConfig();
 
         AppSync.instance.server = null;
+        isServerDataViewReady = false;
       }
 
       return true;
@@ -456,6 +469,63 @@ public class MainActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  public void populateServerDataLayout() {
+    LinearLayout parent = new LinearLayout(this);
+    parent.setOrientation(LinearLayout.VERTICAL);
+
+    TextView heading = new TextView(this);
+    heading.setText("Server Running");
+    heading.setTextSize(28);
+    heading.setTypeface(Typeface.DEFAULT_BOLD);
+
+    parent.addView(heading);
+
+    String[] fields = {"Client Status ", "Total Packets In ", "Total Packets Out ", "Total Data In ", "Total Data Out "};
+    int[] fieldIds = {serverClientStatusView, serverPacketInView, serverPacketOutView, serverDataInView, serverDataOutView};
+
+    int i = 0;
+    for (String field : fields) {
+      LinearLayout container = new LinearLayout(this);
+      container.setOrientation(LinearLayout.HORIZONTAL);
+      container.setPadding(container.getPaddingLeft(), 10, container.getPaddingRight(), container.getPaddingBottom());
+
+      TextView fieldName = new TextView(this);
+      fieldName.setText(field);
+      fieldName.setTypeface(Typeface.DEFAULT_BOLD);
+
+      TextView fieldValue = new TextView(this);
+      fieldValue.setText("0");
+      fieldValue.setId(fieldIds[i]);
+
+      container.addView(fieldName);
+      container.addView(fieldValue);
+
+      parent.addView(container);
+
+      i++;
+    }
+
+    primaryLayout.addView(parent);
+
+    isServerDataViewReady = true;
+  }
+
+  public void updateServerDataLayout() {
+    if (AppSync.getServer() != null && isServerDataViewReady) {
+      if (AppSync.getServer().getActiveClient() != null) {
+        ((TextView) findViewById(serverClientStatusView)).setText("Connected");
+        ((TextView) findViewById(serverPacketInView)).setText(String.valueOf(AppSync.getServer().getPacketsSent()));
+        ((TextView) findViewById(serverPacketOutView)).setText(String.valueOf(AppSync.getServer().getPacketsReceived()));
+        ((TextView) findViewById(serverDataInView)).setText(String.valueOf(AppSync.getServer().getDataSent()));
+        ((TextView) findViewById(serverDataOutView)).setText(String.valueOf(AppSync.getServer().getDataReceived()));
+
+      } else {
+        ((TextView) findViewById(serverClientStatusView)).setText("No client connected");
+
+      }
+    }
   }
 
   public void connectionDisconnected() {

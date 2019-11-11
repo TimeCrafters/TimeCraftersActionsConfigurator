@@ -20,6 +20,9 @@ public class Server {
 
   private String TAG = "TACNET|Server";
 
+  private int packetsSent, packetsReceived, clientLastPacketsSent, clientLastPacketsReceived = 0;
+  private long dataSent, dataReceived, clientLastDataSent, clientLastDataReceived = 0;
+
   private Runnable handleClientRunner;
 
   public Server(int port) throws IOException {
@@ -91,10 +94,18 @@ public class Server {
                 lastSyncTime = System.currentTimeMillis();
 
                 activeClient.sync(handleClientRunner);
+                updateNetStats();
               }
             }
 
+            updateNetStats();
             activeClient = null;
+
+            clientLastPacketsSent = 0;
+            clientLastPacketsReceived = 0;
+            clientLastDataSent = 0;
+            clientLastDataReceived = 0;
+
             AppSync.getMainActivity().clientDisconnected();
           }
         }).start();
@@ -118,7 +129,7 @@ public class Server {
         }
       }
 
-      activeClient.puts("heartbeat");
+      activeClient.puts(Client.PROTOCOL_HEARTBEAT);
     }
   }
 
@@ -137,6 +148,39 @@ public class Server {
 
   public Client getActiveClient() {
     return activeClient;
+  }
+
+  public int getPacketsSent() {
+    return packetsSent;
+  }
+
+  public int getPacketsReceived() {
+    return packetsReceived;
+  }
+
+  public long getDataSent() {
+    return dataSent;
+  }
+
+  public long getDataReceived() {
+    return dataReceived;
+  }
+
+  private void updateNetStats() {
+    if (activeClient != null) {
+      // NOTE: In and Out are reversed for Server stats
+
+      packetsSent += activeClient.getPacketsReceived() - clientLastPacketsReceived;
+      packetsReceived += activeClient.getPacketsSent() - clientLastPacketsSent;
+
+      dataSent += activeClient.getDataReceived() - clientLastDataReceived;
+      dataReceived += activeClient.getDataSent() - clientLastDataSent;
+
+      clientLastPacketsSent = activeClient.getPacketsSent();
+      clientLastPacketsReceived = activeClient.getPacketsReceived();
+      clientLastDataSent = activeClient.getDataSent();
+      clientLastDataReceived = activeClient.getDataReceived();
+    }
   }
 
   public boolean isBound() {

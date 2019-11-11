@@ -35,6 +35,8 @@ public class Client {
 
   private String TAG = "TACNET|Client";
 
+  final static public String PROTOCOL_HEARTBEAT = "heartbeat";
+
   public Client() {
     this.uuid = (UUID.randomUUID()).toString();
 

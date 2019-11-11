@@ -38,12 +38,19 @@ public class UIController extends TimerTask {
       } else {
         setupActionBarColor(AppSync.getMainActivity().getResources().getColor(R.color.colorServerActive));
       }
+
+      AppSync.getMainActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          AppSync.getMainActivity().updateServerDataLayout();
+        }
+      });
     }
   }
 
   private void controlConnectionMode() {
     if (!AppSync.getConnection().isClosed()) {
-      if (!AppSync.getConnection().hasConnected()) {
+      if (AppSync.getConnection().hasConnected()) {
         setupActionBarColor(AppSync.getMainActivity().getResources().getColor(R.color.colorConnectionActive));
 
       } else {
