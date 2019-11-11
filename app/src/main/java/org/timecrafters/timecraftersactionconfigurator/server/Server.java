@@ -5,6 +5,7 @@ import android.util.Log;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,7 +18,15 @@ public class Server {
   private long lastSyncTime = 0;
   private long syncInterval = 250;
 
+  private String TAG = "TACNET|Server";
+
+  private int packetsSent, packetsReceived, clientLastPacketsSent, clientLastPacketsReceived = 0;
+  private long dataSent, dataReceived, clientLastDataSent, clientLastDataReceived = 0;
+
   private Runnable handleClientRunner;
+
+  private long lastHeartBeatSent = 0;
+  private long heartBeatInterval = 3_000;
 
   public Server(int port) throws IOException {
     this.server = new ServerSocket();
@@ -39,10 +48,10 @@ public class Server {
         while(!server.isBound() && connectionAttempts < 10) {
           try {
             server.bind(new InetSocketAddress(port));
-            Log.i("TACNET", "Server bound and ready!");
+            Log.i(TAG, "Server bound and ready!");
           } catch (IOException e) {
             connectionAttempts++;
-            Log.e("TACNET", "Server failed to bind: " + e.getMessage());
+            Log.e(TAG, "Server failed to bind: " + e.getMessage());
           }
         }
 
@@ -50,7 +59,7 @@ public class Server {
           try {
             runServer();
           } catch (IOException e) {
-            Log.e("TACNET", "Error running server: " + e.getMessage());
+            Log.e(TAG, "Error running server: " + e.getMessage());
           }
 
         }
@@ -66,17 +75,19 @@ public class Server {
       client.setSocket(this.server.accept());
 
       if (activeClient != null && !activeClient.isClosed()) {
-        Log.i("TACNET", "Too many clients, already have one connected!");
+        Log.i(TAG, "Too many clients, already have one connected!");
         client.close("Too many clients!");
 
       } else {
-        Writer.writeJSON(Writer.getBackupConfigFilePath(), MainActivity.instance.getDataStructs());
+        Writer.writeJSON(Writer.getBackupConfigFilePath(), AppSync.getDataStructs());
 
         this.activeClient = client;
+        AppSync.getMainActivity().clientConnected();
+
         activeClient.puts(activeClient.uuid());
         activeClient.puts(Reader.rawConfigFile());
 
-        Log.i("TACNET", "Client connected!");
+        Log.i(TAG, "Client connected!");
 
         new Thread(new Runnable() {
           @Override
@@ -86,8 +97,25 @@ public class Server {
                 lastSyncTime = System.currentTimeMillis();
 
                 activeClient.sync(handleClientRunner);
+                updateNetStats();
+              }
+
+              try {
+                Thread.sleep(syncInterval);
+              } catch (InterruptedException e) {
+                // Failed to sleep, i guess.
               }
             }
+
+            updateNetStats();
+            activeClient = null;
+
+            clientLastPacketsSent = 0;
+            clientLastPacketsReceived = 0;
+            clientLastDataSent = 0;
+            clientLastDataReceived = 0;
+
+            AppSync.getMainActivity().clientDisconnected();
           }
         }).start();
 
@@ -105,12 +133,16 @@ public class Server {
                         message.charAt(message.length() - 1) == "]".toCharArray()[0]
         ) {
           // write json to file
-          Log.i("TACNET", "Got valid json: " + message);
+          Log.i(TAG, "Got valid json: " + message);
           Writer.overwriteConfigFile(message);
         }
       }
 
-      activeClient.puts("heartbeat");
+      if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
+        lastHeartBeatSent = System.currentTimeMillis();
+
+        activeClient.puts(Client.PROTOCOL_HEARTBEAT);
+      }
     }
   }
 
@@ -121,6 +153,47 @@ public class Server {
     }
 
     this.server.close();
+  }
+
+  public boolean hasActiveClient() {
+    return activeClient != null;
+  }
+
+  public Client getActiveClient() {
+    return activeClient;
+  }
+
+  public int getPacketsSent() {
+    return packetsSent;
+  }
+
+  public int getPacketsReceived() {
+    return packetsReceived;
+  }
+
+  public long getDataSent() {
+    return dataSent;
+  }
+
+  public long getDataReceived() {
+    return dataReceived;
+  }
+
+  private void updateNetStats() {
+    if (activeClient != null) {
+      // NOTE: In and Out are reversed for Server stats
+
+      packetsSent += activeClient.getPacketsReceived() - clientLastPacketsReceived;
+      packetsReceived += activeClient.getPacketsSent() - clientLastPacketsSent;
+
+      dataSent += activeClient.getDataReceived() - clientLastDataReceived;
+      dataReceived += activeClient.getDataSent() - clientLastDataSent;
+
+      clientLastPacketsSent = activeClient.getPacketsSent();
+      clientLastPacketsReceived = activeClient.getPacketsReceived();
+      clientLastDataSent = activeClient.getDataSent();
+      clientLastDataReceived = activeClient.getDataReceived();
+    }
   }
 
   public boolean isBound() {

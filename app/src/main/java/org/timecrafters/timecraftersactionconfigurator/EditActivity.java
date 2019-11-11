@@ -17,6 +17,7 @@ import android.widget.TextView;
 import org.timecrafters.timecraftersactionconfigurator.actionSupport.RenameActionDialog;
 import org.timecrafters.timecraftersactionconfigurator.editSupport.EditDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
@@ -48,10 +49,10 @@ public class EditActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_edit);
 
-    mainActivity = MainActivity.instance;
-    dataStructs  = mainActivity.dataStructs;
+    mainActivity = AppSync.getMainActivity();
+    dataStructs  = AppSync.getDataStructs();
 
-    if (!mainActivity.permitDestructiveEditing) {
+    if (!AppSync.instance.allowDestructiveEditing) {
       ((LinearLayout) findViewById(R.id.add_variable_form)).setVisibility(View.INVISIBLE);
     }
 
@@ -74,7 +75,7 @@ public class EditActivity extends AppCompatActivity {
     renameAction.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        if (!mainActivity.permitDestructiveEditing) {
+        if (!AppSync.instance.allowDestructiveEditing) {
           Snackbar.make(view, "Destructive Editing is disabled, can't rename action.", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
           return;
@@ -97,7 +98,7 @@ public class EditActivity extends AppCompatActivity {
             addToList(name, value, currentIndex);
             currentIndex++;
 
-            mainActivity.saveJSON(container, "Added \"" + name + "\".");
+            AppSync.saveJSON(container, "Added \"" + name + "\".");
 
           } else {
             Snackbar.make(view, "Name \""+name+"\" is already taken!", Snackbar.LENGTH_LONG)
@@ -175,10 +176,11 @@ public class EditActivity extends AppCompatActivity {
     final Button deleteButton = new Button(this);
     deleteButton.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
     deleteButton.setText("Delete");
+    deleteButton.setTextColor(getResources().getColor(R.color.deleteButton));
     deleteButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        if (!mainActivity.permitDestructiveEditing) {
+        if (!AppSync.instance.allowDestructiveEditing) {
           Snackbar.make(view, "Destructive Editing is disabled, can't delete variable.", Snackbar.LENGTH_LONG)
                   .setAction("Action", null).show();
           return;
@@ -191,7 +193,7 @@ public class EditActivity extends AppCompatActivity {
             container.removeView(parent);
 
             activeDataStruct.variables().remove(variableName);
-            mainActivity.saveJSON(container, "Deleted \"" + variableName + "\".");
+            AppSync.saveJSON(container, "Deleted \"" + variableName + "\".");
             recolorParents();
         }};
 

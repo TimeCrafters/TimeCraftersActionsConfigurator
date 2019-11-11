@@ -2,11 +2,14 @@ package org.timecrafters.timecraftersactionconfigurator.server;
 
 import android.util.Log;
 
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,6 +30,13 @@ public class Client {
 
   private long syncInterval = 100;
 
+  private int packetsSent, packetsReceived = 0;
+  private long dataSent, dataReceived = 0;
+
+  private String TAG = "TACNET|Client";
+
+  final static public String PROTOCOL_HEARTBEAT = "heartbeat";
+
   public Client() {
     this.uuid = (UUID.randomUUID()).toString();
 
@@ -40,6 +50,12 @@ public class Client {
 
   public void setSocket(Socket socket) throws IOException {
     this.socket = socket;
+
+    // This socket is for a "Connection" thus set a connect timeout
+    if (!this.socket.isBound()) {
+      this.socket.connect(new InetSocketAddress(AppSync.HOSTNAME, AppSync.PORT), 1500);
+    }
+
     this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
@@ -64,15 +80,18 @@ public class Client {
           try {
             String message = read();
             if (!message.equals("")) {
-              Log.i("TACNET", "Client read: " + message);
+              Log.i(TAG, "Read: " + message);
 
               synchronized (readQueueLock) {
                 readQueue.add(message);
+
+                packetsReceived++;
+                dataReceived += message.length();
               }
             }
 
           } catch (IOException e) {
-            Log.e("TACNET", "Client read error: " + e.getMessage());
+            Log.e(TAG, "Read error: " + e.getMessage());
           }
 
           try {
@@ -97,14 +116,19 @@ public class Client {
                 message = (String) itr.next();
 
                 write(message);
-                Log.i("TACNET", "Client write: " + message);
+
+                packetsSent++;
+                dataSent += message.length();
+
+                Log.i(TAG, "Write: " + message);
                 itr.remove();
 
               } catch (IOException e) {
-                Log.e("TACNET", "Client write error: " + e.getMessage());
+                Log.e(TAG, "Write error: " + e.getMessage());
                 try {
                   socket.close();
                 } catch (IOException k) {
+                  Log.e(TAG, "Failed to close socket: " + e.getMessage());
                 }
               }
             }
@@ -126,7 +150,7 @@ public class Client {
     String message = this.gets();
 
     while (message != null) {
-      Log.i("TACNET", "Writing to Queue: " + message);
+      Log.i(TAG, "Writing to Queue: " + message);
       this.puts(message);
 
       message = this.gets();
@@ -194,6 +218,11 @@ public class Client {
   public String decode(String blob) {
     return  blob;
   }
+
+  public int getPacketsSent() { return packetsSent; }
+  public int getPacketsReceived() { return packetsReceived; }
+  public long getDataSent() { return dataSent; }
+  public long getDataReceived() { return dataReceived; }
 
   public void flush() throws IOException {
     this.bufferedWriter.flush();

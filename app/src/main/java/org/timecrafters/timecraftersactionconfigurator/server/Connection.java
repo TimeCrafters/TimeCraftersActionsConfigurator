@@ -5,6 +5,7 @@ import android.util.Log;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -20,9 +21,10 @@ public class Connection {
   private long syncInterval = 250;
 
   private Runnable connectionHandlingRunner;
-  private boolean syncToServer = false;
-  private long lastConfigSync = 0;
-  private long configSyncInterval = 3_000;
+  private long lastHeartBeatSent = 0;
+  private long heartBeatInterval = 3_000;
+
+  private String TAG = "TACNET|Connection";
 
   public Connection(String hostname, int port) {
     this.hostname = hostname;
@@ -47,8 +49,8 @@ public class Connection {
       @Override
       public void run() {
         try {
-          client.setSocket(new Socket(hostname, port));
-          Log.i("TACNET", "Connected to: " + hostname + ":" + port);
+          client.setSocket(new Socket());
+          Log.i(TAG, "Connected to: " + hostname + ":" + port);
 
           while(client != null && !client.isClosed()) {
             if (System.currentTimeMillis() > lastSyncTime + syncInterval) {
@@ -63,7 +65,7 @@ public class Connection {
 
           callback.run();
 
-          Log.e("TACNET", e.toString());
+          Log.e(TAG, e.toString());
         }
       }
     }).start();
@@ -79,24 +81,33 @@ public class Connection {
                 message.charAt(message.length() - 1) == "]".toCharArray()[0]
         ) {
           // write json to file
-          Log.i("TACNET", "Got valid json: " + message);
+          Log.i(TAG, "Got valid json: " + message);
            Writer.overwriteConfigFile(message);
 
-           MainActivity.instance.runOnUiThread(new Runnable() {
+          AppSync.getMainActivity().runOnUiThread(new Runnable() {
              @Override
              public void run() {
-               MainActivity.instance.reloadConfig();
+               AppSync.getMainActivity().reloadConfig();
              }
            });
         }
       }
 
-      client.puts("heartbeat");
-    }
-  }
+      if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
+        lastHeartBeatSent = System.currentTimeMillis();
 
-  public void syncToServer() {
-    syncToServer = true;
+        client.puts(Client.PROTOCOL_HEARTBEAT);
+      }
+
+      try {
+        Thread.sleep(syncInterval);
+      } catch (InterruptedException e) {
+        // Failed to sleep I suppose.
+      }
+
+    } else {
+      client = null;
+    }
   }
 
   public void puts(String message) {
@@ -107,10 +118,13 @@ public class Connection {
     return this.client.gets();
   }
 
+  public Client getClient() {
+    return client;
+  }
+
   public boolean isClosed() {
     return this.client == null || this.client.isClosed();
   }
-
   public boolean socketError() {
     return socketError;
   }
