@@ -135,6 +135,10 @@ public class Server {
     return activeClient != null;
   }
 
+  public Client getActiveClient() {
+    return activeClient;
+  }
+
   public boolean isBound() {
     return this.server.isBound();
   }

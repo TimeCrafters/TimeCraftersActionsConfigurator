@@ -30,6 +30,9 @@ public class Client {
 
   private long syncInterval = 100;
 
+  private int packetsSent, packetsReceived = 0;
+  private long dataSent, dataReceived = 0;
+
   private String TAG = "TACNET|Client";
 
   public Client() {
@@ -79,6 +82,9 @@ public class Client {
 
               synchronized (readQueueLock) {
                 readQueue.add(message);
+
+                packetsReceived++;
+                dataReceived += message.length();
               }
             }
 
@@ -108,6 +114,10 @@ public class Client {
                 message = (String) itr.next();
 
                 write(message);
+
+                packetsSent++;
+                dataSent += message.length();
+
                 Log.i(TAG, "Write: " + message);
                 itr.remove();
 
@@ -206,6 +216,11 @@ public class Client {
   public String decode(String blob) {
     return  blob;
   }
+
+  public int getPacketsSent() { return packetsSent; }
+  public int getPacketsReceived() { return packetsReceived; }
+  public long getDataSent() { return dataSent; }
+  public long getDataReceived() { return dataReceived; }
 
   public void flush() throws IOException {
     this.bufferedWriter.flush();
