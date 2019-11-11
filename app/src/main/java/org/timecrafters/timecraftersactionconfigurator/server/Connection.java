@@ -25,6 +25,8 @@ public class Connection {
   private long lastConfigSync = 0;
   private long configSyncInterval = 3_000;
 
+  private String TAG = "TACNET|Connection";
+
   public Connection(String hostname, int port) {
     this.hostname = hostname;
     this.port = port;
@@ -49,7 +51,7 @@ public class Connection {
       public void run() {
         try {
           client.setSocket(new Socket());
-          Log.i("TACNET", "Connected to: " + hostname + ":" + port);
+          Log.i(TAG, "Connected to: " + hostname + ":" + port);
 
           while(client != null && !client.isClosed()) {
             if (System.currentTimeMillis() > lastSyncTime + syncInterval) {
@@ -64,7 +66,7 @@ public class Connection {
 
           callback.run();
 
-          Log.e("TACNET", e.toString());
+          Log.e(TAG, e.toString());
         }
       }
     }).start();
@@ -80,7 +82,7 @@ public class Connection {
                 message.charAt(message.length() - 1) == "]".toCharArray()[0]
         ) {
           // write json to file
-          Log.i("TACNET", "Got valid json: " + message);
+          Log.i(TAG, "Got valid json: " + message);
            Writer.overwriteConfigFile(message);
 
           AppSync.getMainActivity().runOnUiThread(new Runnable() {
@@ -93,6 +95,8 @@ public class Connection {
       }
 
       client.puts("heartbeat");
+    } else {
+      client = null;
     }
   }
 
@@ -111,6 +115,7 @@ public class Connection {
   public boolean isClosed() {
     return this.client == null || this.client.isClosed();
   }
+  public boolean hasConnected() { return this.client != null && this.client.isConnected(); }
 
   public boolean socketError() {
     return socketError;

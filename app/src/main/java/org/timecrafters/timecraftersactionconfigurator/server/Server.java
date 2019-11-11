@@ -18,6 +18,8 @@ public class Server {
   private long lastSyncTime = 0;
   private long syncInterval = 250;
 
+  private String TAG = "TACNET|Server";
+
   private Runnable handleClientRunner;
 
   public Server(int port) throws IOException {
@@ -40,10 +42,10 @@ public class Server {
         while(!server.isBound() && connectionAttempts < 10) {
           try {
             server.bind(new InetSocketAddress(port));
-            Log.i("TACNET", "Server bound and ready!");
+            Log.i(TAG, "Server bound and ready!");
           } catch (IOException e) {
             connectionAttempts++;
-            Log.e("TACNET", "Server failed to bind: " + e.getMessage());
+            Log.e(TAG, "Server failed to bind: " + e.getMessage());
           }
         }
 
@@ -51,7 +53,7 @@ public class Server {
           try {
             runServer();
           } catch (IOException e) {
-            Log.e("TACNET", "Error running server: " + e.getMessage());
+            Log.e(TAG, "Error running server: " + e.getMessage());
           }
 
         }
@@ -67,17 +69,19 @@ public class Server {
       client.setSocket(this.server.accept());
 
       if (activeClient != null && !activeClient.isClosed()) {
-        Log.i("TACNET", "Too many clients, already have one connected!");
+        Log.i(TAG, "Too many clients, already have one connected!");
         client.close("Too many clients!");
 
       } else {
         Writer.writeJSON(Writer.getBackupConfigFilePath(), AppSync.getDataStructs());
 
         this.activeClient = client;
+        AppSync.getMainActivity().clientConnected();
+
         activeClient.puts(activeClient.uuid());
         activeClient.puts(Reader.rawConfigFile());
 
-        Log.i("TACNET", "Client connected!");
+        Log.i(TAG, "Client connected!");
 
         new Thread(new Runnable() {
           @Override
@@ -89,6 +93,9 @@ public class Server {
                 activeClient.sync(handleClientRunner);
               }
             }
+
+            activeClient = null;
+            AppSync.getMainActivity().clientDisconnected();
           }
         }).start();
 
@@ -106,7 +113,7 @@ public class Server {
                         message.charAt(message.length() - 1) == "]".toCharArray()[0]
         ) {
           // write json to file
-          Log.i("TACNET", "Got valid json: " + message);
+          Log.i(TAG, "Got valid json: " + message);
           Writer.overwriteConfigFile(message);
         }
       }
@@ -122,6 +129,10 @@ public class Server {
     }
 
     this.server.close();
+  }
+
+  public boolean hasActiveClient() {
+    return activeClient != null;
   }
 
   public boolean isBound() {

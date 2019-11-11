@@ -49,19 +49,24 @@ public class MainActivity extends AppCompatActivity {
 
   private Menu menu;
 
+  private String TAG = "TACNET|UI";
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    Toolbar toolbar = findViewById(R.id.toolbar);
+    setSupportActionBar(toolbar);
+
+
     if (AppSync.instance == null) {
       new AppSync();
     }
 
     AppSync.instance.mainActivity = this;
 
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    Toolbar toolbar = findViewById(R.id.toolbar);
-    setSupportActionBar(toolbar);
 
+    primaryLayout = findViewById(R.id.primary_layout);
     FloatingActionButton addActionButton = findViewById(R.id.fab);
 
     addActionButton.setOnClickListener(new View.OnClickListener() {
@@ -78,8 +83,6 @@ public class MainActivity extends AppCompatActivity {
         }
       }
     });
-
-    primaryLayout = findViewById(R.id.primary_layout);
 
     // dataStructs should be populated from checkPermissions()->handleReader()
     if (AppSync.getServer() == null) {
@@ -354,7 +357,6 @@ public class MainActivity extends AppCompatActivity {
       item.setChecked(AppSync.instance.serverEnabled);
 
       if (AppSync.instance.serverEnabled) {
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#f50000")));
         try {
           AppSync.instance.server = new Server(AppSync.PORT);
           AppSync.instance.server.start();
@@ -373,8 +375,6 @@ public class MainActivity extends AppCompatActivity {
           AppSync.instance.serverEnabled = false;
           item.setChecked(AppSync.instance.serverEnabled);
 
-          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
-
           Snackbar.make(primaryLayout, "Server failed to start: " + e.getMessage(), Snackbar.LENGTH_LONG).show();
 
           reloadConfig();
@@ -388,7 +388,6 @@ public class MainActivity extends AppCompatActivity {
 
         reloadConfig();
 
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
         AppSync.instance.server = null;
       }
 
@@ -457,5 +456,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     return super.onOptionsItemSelected(item);
+  }
+
+  public void connectionDisconnected() {
+    this.menu.findItem(R.id.action_connection).setTitle("Connect");
+    AppSync.instance.connection = null;
+
+    Snackbar.make(primaryLayout, "Lost connection to server!", Snackbar.LENGTH_LONG).show();
+  }
+
+  public void clientConnected() {
+    Snackbar.make(primaryLayout, "Client connected!", Snackbar.LENGTH_LONG).show();
+  }
+
+  public void clientDisconnected() {
+    Snackbar.make(primaryLayout, "Client no longer connected!", Snackbar.LENGTH_LONG).show();
   }
 }

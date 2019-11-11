@@ -12,4 +12,9 @@
 
     <color name="deleteButton">#990000</color>
     <color name="deleteActive">#770000</color>
+
+    <color name="colorServerActiveClient">#DD0000</color>
+    <color name="colorServerActive">#AA0000</color>
+    <color name="colorConnectionActive">#FF5500</color>
+    <color name="colorConnectionPending">#AA5500</color>
 </resources>

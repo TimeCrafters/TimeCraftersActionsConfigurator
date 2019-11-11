@@ -10,10 +10,11 @@ import org.timecrafters.timecraftersactionconfigurator.server.Connection;
 import org.timecrafters.timecraftersactionconfigurator.server.Server;
 
 import java.util.ArrayList;
+import java.util.Timer;
 
 public class AppSync {
   public static AppSync instance;
-  final public static String HOSTNAME = "192.168.49.1";
+  final public static String HOSTNAME = "192.168.1.3";//"192.168.49.1";
   final public static int    PORT     = 8962;
 
   public Server server;
@@ -24,8 +25,13 @@ public class AppSync {
                  allowDestructiveEditing = false;
   public MainActivity mainActivity;
 
+  private Timer uiController;
+
   public AppSync() {
     this.instance = this;
+
+    this.uiController = new Timer("uicontroller", false);
+    this.uiController.schedule(new UIController(), 0, 500);
   }
 
   static public Server getServer() {

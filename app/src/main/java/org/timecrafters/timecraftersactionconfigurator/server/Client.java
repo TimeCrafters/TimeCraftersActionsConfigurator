@@ -30,6 +30,8 @@ public class Client {
 
   private long syncInterval = 100;
 
+  private String TAG = "TACNET|Client";
+
   public Client() {
     this.uuid = (UUID.randomUUID()).toString();
 
@@ -73,7 +75,7 @@ public class Client {
           try {
             String message = read();
             if (!message.equals("")) {
-              Log.i("TACNET", "Client read: " + message);
+              Log.i(TAG, "Read: " + message);
 
               synchronized (readQueueLock) {
                 readQueue.add(message);
@@ -81,7 +83,7 @@ public class Client {
             }
 
           } catch (IOException e) {
-            Log.e("TACNET", "Client read error: " + e.getMessage());
+            Log.e(TAG, "Read error: " + e.getMessage());
           }
 
           try {
@@ -106,14 +108,15 @@ public class Client {
                 message = (String) itr.next();
 
                 write(message);
-                Log.i("TACNET", "Client write: " + message);
+                Log.i(TAG, "Write: " + message);
                 itr.remove();
 
               } catch (IOException e) {
-                Log.e("TACNET", "Client write error: " + e.getMessage());
+                Log.e(TAG, "Write error: " + e.getMessage());
                 try {
                   socket.close();
                 } catch (IOException k) {
+                  Log.e(TAG, "Failed to close socket: " + e.getMessage());
                 }
               }
             }
@@ -135,7 +138,7 @@ public class Client {
     String message = this.gets();
 
     while (message != null) {
-      Log.i("TACNET", "Writing to Queue: " + message);
+      Log.i(TAG, "Writing to Queue: " + message);
       this.puts(message);
 
       message = this.gets();
