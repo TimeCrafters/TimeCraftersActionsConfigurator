@@ -53,6 +53,17 @@ public class UIController extends TimerTask {
       if (AppSync.getConnection().hasConnected()) {
         setupActionBarColor(AppSync.getMainActivity().getResources().getColor(R.color.colorConnectionActive));
 
+        if (!shownClientConnected) {
+          AppSync.getMainActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              AppSync.getMainActivity().connectionConnected();
+            }
+          });
+        }
+
+        shownClientConnected = true;
+
       } else {
         setupActionBarColor(AppSync.getMainActivity().getResources().getColor(R.color.colorConnectionPending));
       }

@@ -430,7 +430,7 @@ public class MainActivity extends AppCompatActivity {
     if (id == R.id.action_connection) {
       if (AppSync.getServer() == null) {
         if (AppSync.getConnection() == null) {
-          item.setTitle("Disconnect");
+          item.setTitle("Connecting...");
           AppSync.instance.connection = new Connection(AppSync.HOSTNAME, AppSync.PORT);
           AppSync.instance.connection.connect(new Runnable() {
             @Override
@@ -535,8 +535,14 @@ public class MainActivity extends AppCompatActivity {
     Snackbar.make(primaryLayout, "Lost connection to server!", Snackbar.LENGTH_LONG).show();
   }
 
+  public void connectionConnected() {
+    this.menu.findItem(R.id.action_connection).setTitle("Disconnect");
+
+    Snackbar.make(primaryLayout, "Connection to server active", Snackbar.LENGTH_LONG).show();
+  }
+
   public void clientConnected() {
-    Snackbar.make(primaryLayout, "Client connected!", Snackbar.LENGTH_LONG).show();
+    Snackbar.make(primaryLayout, "Client has connected", Snackbar.LENGTH_LONG).show();
   }
 
   public void clientDisconnected() {
