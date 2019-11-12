@@ -35,9 +35,11 @@ public class AddActionDialog extends Dialog {
         addAction.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (actionName.getText().length() > 0) {
-                    if (AppSync.actionNameIsUnique(actionName.getText().toString())) {
-                        AppSync.addNewAction(actionName.getText().toString());
+                String name = actionName.getText().toString().trim();
+
+                if (name.length() > 0) {
+                    if (AppSync.actionNameIsUnique(name)) {
+                        AppSync.addNewAction(name);
                         dismiss();
                     } else {
                         Toast.makeText(mainActivity, "\""+ name +"\" already exists!", Toast.LENGTH_LONG).show();
