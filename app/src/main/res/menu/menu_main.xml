@@ -17,6 +17,10 @@
         android:checked="false"
         android:title="Destructive Editing" />
     <item
+        android:id="@+id/action_sort_alphabetically"
+        android:icon="@android:drawable/ic_menu_sort_alphabetically"
+        android:title="Sort A-Z" />
+    <item
         android:id="@+id/action_connection"
         android:title="Connect" />
 </menu>

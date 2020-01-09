@@ -37,6 +37,9 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
   private static final int REQUEST_WRITE_PERMISSION = 70;
@@ -431,6 +434,29 @@ public class MainActivity extends AppCompatActivity {
         Snackbar.make(primaryLayout, "Can not reload config while server is running!", Snackbar.LENGTH_LONG).show();
       }
       return true;
+    }
+
+    if (id == R.id.action_sort_alphabetically) {
+      Collections.sort(AppSync.getDataStructs(), new Comparator<DataStruct>() {
+        @Override
+        public int compare(DataStruct dataStructA, DataStruct dataStructB) {
+          return dataStructA.name().compareTo(dataStructB.name());
+        }
+      });
+
+//      // TODO: Implement sorting of variables, maybe, in future.
+//      for (DataStruct dataStruct : AppSync.getDataStructs()) {
+//        Collections.sort(dataStruct.variables(), new Comparator<HashMap<String, String>>() {
+//          @Override
+//          public int compare(HashMap<String, String> hashA, HashMap<String, String> hashB) {
+//            return hashA.get("name").compareTo(hashB.get("name"));
+//          }
+//        });
+//      }
+
+      AppSync.saveJSON();
+      reloadConfig();
+      Snackbar.make(primaryLayout, "Sorted and saved Actions by Name", Snackbar.LENGTH_LONG);
     }
 
     if (id == R.id.action_connection) {
