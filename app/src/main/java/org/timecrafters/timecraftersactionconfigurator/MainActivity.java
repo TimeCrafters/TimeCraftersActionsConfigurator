@@ -440,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
       Collections.sort(AppSync.getDataStructs(), new Comparator<DataStruct>() {
         @Override
         public int compare(DataStruct dataStructA, DataStruct dataStructB) {
-          return dataStructA.name().compareTo(dataStructB.name());
+          return dataStructA.name().toLowerCase().compareTo(dataStructB.name().toLowerCase());
         }
       });
 
