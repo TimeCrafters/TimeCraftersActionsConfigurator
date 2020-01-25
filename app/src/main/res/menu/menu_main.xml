@@ -18,8 +18,12 @@
         android:title="Destructive Editing" />
     <item
         android:id="@+id/action_sort_alphabetically"
-        android:icon="@android:drawable/ic_menu_sort_alphabetically"
+        android:icon="@android:drawable/ic_search_category_default"
         android:title="Sort A-Z" />
+    <item
+        android:id="@+id/action_search_filter"
+        android:icon="@android:drawable/ic_menu_sort_alphabetically"
+        android:title="Search Filter" />
     <item
         android:id="@+id/action_connection"
         android:title="Connect" />

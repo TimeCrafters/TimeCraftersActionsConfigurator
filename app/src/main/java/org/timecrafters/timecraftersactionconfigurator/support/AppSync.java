@@ -20,6 +20,7 @@ public class AppSync {
   public Server server;
   public Connection connection;
   public ArrayList<DataStruct> dataStructs = new ArrayList<>();
+  public String searchFilter = null;
 
   public boolean serverEnabled = false,
                  allowDestructiveEditing = false;

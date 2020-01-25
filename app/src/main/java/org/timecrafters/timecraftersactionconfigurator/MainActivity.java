@@ -15,6 +15,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.timecrafters.timecraftersactionconfigurator.actionSupport.AddActionDialog;
+import org.timecrafters.timecraftersactionconfigurator.actionSupport.SearchFilterDialog;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
@@ -247,6 +249,10 @@ public class MainActivity extends AppCompatActivity {
 
   private void populateLayout() {
     for(DataStruct item : AppSync.getDataStructs()) {
+      if (AppSync.instance.searchFilter != null && !item.name().toLowerCase().contains(AppSync.instance.searchFilter)) {
+        continue;
+      }
+
       addActionToLayout(item);
     }
   }
@@ -457,6 +463,11 @@ public class MainActivity extends AppCompatActivity {
       AppSync.saveJSON();
       reloadConfig();
       Snackbar.make(primaryLayout, "Sorted and saved Actions by Name", Snackbar.LENGTH_LONG);
+    }
+
+    if (id == R.id.action_search_filter) {
+      SearchFilterDialog searchFilterDialog = new SearchFilterDialog(this, this);
+      searchFilterDialog.show();
     }
 
     if (id == R.id.action_connection) {
