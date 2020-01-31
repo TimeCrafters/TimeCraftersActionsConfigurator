@@ -443,31 +443,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     if (id == R.id.action_sort_alphabetically) {
-      Collections.sort(AppSync.getDataStructs(), new Comparator<DataStruct>() {
-        @Override
-        public int compare(DataStruct dataStructA, DataStruct dataStructB) {
-          return dataStructA.name().toLowerCase().compareTo(dataStructB.name().toLowerCase());
-        }
-      });
+      if (AppSync.getServer() == null) {
+        Collections.sort(AppSync.getDataStructs(), new Comparator<DataStruct>() {
+          @Override
+          public int compare(DataStruct dataStructA, DataStruct dataStructB) {
+            return dataStructA.name().toLowerCase().compareTo(dataStructB.name().toLowerCase());
+          }
+        });
 
-//      // TODO: Implement sorting of variables, maybe, in future.
-//      for (DataStruct dataStruct : AppSync.getDataStructs()) {
-//        Collections.sort(dataStruct.variables(), new Comparator<HashMap<String, String>>() {
-//          @Override
-//          public int compare(HashMap<String, String> hashA, HashMap<String, String> hashB) {
-//            return hashA.get("name").compareTo(hashB.get("name"));
-//          }
-//        });
-//      }
-
-      AppSync.saveJSON();
-      reloadConfig();
-      Snackbar.make(primaryLayout, "Sorted and saved Actions by Name", Snackbar.LENGTH_LONG);
+        AppSync.saveJSON();
+        reloadConfig();
+        Snackbar.make(primaryLayout, "Sorted and saved Actions by Name", Snackbar.LENGTH_LONG).show();
+      } else {
+        Snackbar.make(primaryLayout, "Can not sort Actions when server is active!", Snackbar.LENGTH_LONG).show();
+      }
     }
 
     if (id == R.id.action_search_filter) {
-      SearchFilterDialog searchFilterDialog = new SearchFilterDialog(this, this);
-      searchFilterDialog.show();
+
+      if (AppSync.getServer() == null) {
+        SearchFilterDialog searchFilterDialog = new SearchFilterDialog(this, this);
+        searchFilterDialog.show();
+      } else {
+        Snackbar.make(primaryLayout, "Can not use search while server is active!", Snackbar.LENGTH_LONG).show();
+      }
     }
 
     if (id == R.id.action_connection) {

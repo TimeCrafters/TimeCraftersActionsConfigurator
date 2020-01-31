@@ -24,6 +24,7 @@ public class Server {
   private long dataSent, dataReceived, clientLastDataSent, clientLastDataReceived = 0;
 
   private Runnable handleClientRunner;
+  private PacketHandler packetHandler;
 
   private long lastHeartBeatSent = 0;
   private long heartBeatInterval = 3_000;
@@ -31,6 +32,7 @@ public class Server {
   public Server(int port) throws IOException {
     this.server = new ServerSocket();
     this.port = port;
+    this.packetHandler = new PacketHandler(false);
     this.handleClientRunner = new Runnable() {
       @Override
       public void run() {
@@ -136,12 +138,14 @@ public class Server {
           Log.i(TAG, "Got valid json: " + message);
           Writer.overwriteConfigFile(message);
         }
+
+        packetHandler.handle(message);
       }
 
       if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
         lastHeartBeatSent = System.currentTimeMillis();
 
-        activeClient.puts(Client.PROTOCOL_HEARTBEAT);
+        activeClient.puts(Packet.PROTOCOL_HEARTBEAT);
       }
     }
   }

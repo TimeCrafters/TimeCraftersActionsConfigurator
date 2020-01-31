@@ -22,7 +22,7 @@ public class Connection {
 
   private Runnable connectionHandlingRunner;
   private long lastHeartBeatSent = 0;
-  private long heartBeatInterval = 3_000;
+  private long heartBeatInterval = 1_500;
 
   private String TAG = "TACNET|Connection";
 
@@ -96,7 +96,7 @@ public class Connection {
       if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
         lastHeartBeatSent = System.currentTimeMillis();
 
-        client.puts(Client.PROTOCOL_HEARTBEAT);
+        client.puts(Packet.PROTOCOL_HEARTBEAT);
       }
 
       try {
