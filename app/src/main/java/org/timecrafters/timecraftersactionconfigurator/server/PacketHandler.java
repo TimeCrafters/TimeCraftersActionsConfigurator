@@ -1,29 +1,39 @@
 package org.timecrafters.timecraftersactionconfigurator.server;
 
+import android.util.Log;
+
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Reader;
+import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
+import org.timecrafters.timecraftersactionconfigurator.support.AppSync;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class PacketHandler {
-    private boolean hostIsConnection = false;
+    private static final String TAG = "TACNET|PacketHandler";
+    private boolean hostIsAConnection = false;
 
-    public PacketHandler(boolean isHostConnection) {
-        this.hostIsConnection = isHostConnection;
+    public PacketHandler(boolean isHostAConnection) {
+        this.hostIsAConnection = isHostAConnection;
     }
 
     public void handle(String message) {
         Packet packet = Packet.fromStream(message);
 
-        if (packet.isValid()) {
+        if (packet != null && packet.isValid()) {
+            Log.i(TAG, "Received packet of type: " + packet.getPacketType());
             handOff(packet);
         } else {
-            // TODO: log rejected packet.
+            if (packet == null) {
+                Log.i(TAG, "Rejected raw packet: " + message);
+            } else {
+                Log.i(TAG, "Rejected packet: " + packet.toString());
+            }
         }
     }
 
     public void handOff(Packet packet) {
-        switch(packet.packetType) {
+        switch(packet.getPacketType()) {
             case HANDSHAKE: {
                 handleHandShake(packet);
                 return;
@@ -34,13 +44,13 @@ public class PacketHandler {
                 return;
             }
 
-            case DOWNLOAD_CONFIG: {
-                handleDownloadConfig(packet);
+            case DUMP_CONFIG: {
+                handleDumpConfig(packet);
                 return;
             }
 
-            case UPLOAD_CONFIG: {
-                handleUploadConfig(packet);
+            case CHANGE_ACTION: {
+                handleChangeAction(packet);
                 return;
             }
 
@@ -51,25 +61,53 @@ public class PacketHandler {
     }
 
     // NO-OP
-    public void handleHandShake(Packet packet) {}
+    private void handleHandShake(Packet packet) {}
     // NO-OP
-    public void handleHeartBeat(Packet packet) {}
-    // NO-OP
-    public void handleDownloadConfig(Packet packet) {}
+    private void handleHeartBeat(Packet packet) {}
 
-    public void handleUploadConfig(Packet packet) {
-        if (hostIsConnection) {
+    private void handleDumpConfig(Packet packet) {
+        if (
+                packet.getContent().length() > 4 && packet.getContent().charAt(0) == "[".toCharArray()[0] &&
+                        packet.getContent().charAt(packet.getContent().length() - 1) == "]".toCharArray()[0]
+        ) { /* "unless" keyword anyone? */ } else { return; }
+
+        Log.i(TAG, "Got valid json: " + packet.getContent());
+
+        if (hostIsAConnection) {
             // save and reload menu
+            Writer.overwriteConfigFile(packet.getContent());
+
+            AppSync.getMainActivity().runOnUiThread(new Runnable() {
+             @Override
+             public void run() {
+               AppSync.getMainActivity().reloadConfig();
+             }
+            });
         } else {
             // save
+            Writer.overwriteConfigFile(packet.getContent());
         }
     }
 
-    public Packet packetHeartBeat() {
+    private void handleChangeAction(Packet packet) {
+        // TODO: Handle renaming, deleting, and adding.
+    }
+
+    private void handleChangeVariable(Packet packet) {
+        // TODO: Handle renaming, deleting, and adding.
+    }
+
+    static public Packet packetHandShake(String clientUUID) {
+        return Packet.create(Packet.PacketType.HANDSHAKE, clientUUID);
+    }
+
+    static public Packet packetHeartBeat() {
         return Packet.create(Packet.PacketType.HEARTBEAT, Packet.PROTOCOL_HEARTBEAT);
     }
 
-    public Packet packetUploadConfig() {
-        return Packet.create(Packet.PacketType.UPLOAD_CONFIG, Reader.rawConfigFile());
+    static public Packet packetDumpConfig(String string) {
+        string = string.replace("\n", " ");
+
+        return Packet.create(Packet.PacketType.DUMP_CONFIG, string);
     }
 }

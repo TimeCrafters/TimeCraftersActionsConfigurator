@@ -86,8 +86,8 @@ public class Server {
         this.activeClient = client;
         AppSync.getMainActivity().clientConnected();
 
-        activeClient.puts(activeClient.uuid());
-        activeClient.puts(Reader.rawConfigFile());
+        activeClient.puts(PacketHandler.packetHandShake( activeClient.uuid() ).toString());
+        activeClient.puts(PacketHandler.packetDumpConfig( Reader.rawConfigFile() ).toString());
 
         Log.i(TAG, "Client connected!");
 
@@ -130,22 +130,13 @@ public class Server {
       String message = activeClient.gets();
 
       if (message != null) {
-        if (
-                message.length() > 4 && message.charAt(0) == "[".toCharArray()[0] &&
-                        message.charAt(message.length() - 1) == "]".toCharArray()[0]
-        ) {
-          // write json to file
-          Log.i(TAG, "Got valid json: " + message);
-          Writer.overwriteConfigFile(message);
-        }
-
         packetHandler.handle(message);
       }
 
       if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
         lastHeartBeatSent = System.currentTimeMillis();
 
-        activeClient.puts(Packet.PROTOCOL_HEARTBEAT);
+        activeClient.puts(PacketHandler.packetHeartBeat().toString());
       }
     }
   }

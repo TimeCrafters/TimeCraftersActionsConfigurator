@@ -1,28 +1,34 @@
 package org.timecrafters.timecraftersactionconfigurator.server;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
-class Packet {
-    final static public byte PROTOCOL_VERSION = 0x01;
-    final static public String PROTOCOL_CONTENT_START = "|";
+public class Packet {
+    final static public String PROTOCOL_VERSION = "0";
+    final static public String PROTOCOL_HEADER_SEPERATOR = "|";
     final static public String PROTOCOL_HEARTBEAT = "heartbeat";
+    private static final String TAG = "TACNET|Packet";
 
 
-    // NOTE: PacketType is cast to a byte, no more than 255 packet types can exist unless
+    // NOTE: PacketType is cast to a char, no more than 255 packet types can exist unless
     //       header is updated.
     public enum PacketType {
         HANDSHAKE,
         HEARTBEAT,
-        DOWNLOAD_CONFIG,
-        UPLOAD_CONFIG,
+        DUMP_CONFIG,
+        CHANGE_ACTION,
+        CHANGE_VARIABLE,
     }
 
-    byte protocolVersion;
-    PacketType packetType;
-    int contentLength;
-    String content;
+    private String protocolVersion;
+    private PacketType packetType;
+    private int contentLength;
+    private String content;
 
-    Packet(byte protocolVersion, PacketType packetType, int contentLength, String content) {
+    String rawMessage;
+
+    Packet(String protocolVersion, PacketType packetType, int contentLength, String content) {
         this.protocolVersion = protocolVersion;
         this.packetType = packetType;
         this.contentLength = contentLength;
@@ -30,19 +36,27 @@ class Packet {
     }
 
     static public Packet fromStream(String message) {
-        byte[] header;
-        byte version;
+        String version;
         PacketType type;
         int length;
         String body;
 
-        String[] slice = message.split(PROTOCOL_CONTENT_START, 1);
-        header = slice[0].getBytes();
-        body = slice[1];
+        String[] slice = message.split("\\|", 4);
 
-        version = header[0];
-        type = PacketType.values()[header[1]];
-        length = Integer.parseInt( new String(Arrays.copyOfRange(header, 2, header.length - 1)) );
+        if (slice.length < 4) {
+            Log.i(TAG, "Failed to split packet along first 4 " + PROTOCOL_HEADER_SEPERATOR + ". Raw return: " + Arrays.toString(slice));
+            return null;
+        }
+
+        if (!slice[0].equals(PROTOCOL_VERSION)) {
+            Log.i(TAG, "Incompatible protocol version received, expected: " + PROTOCOL_VERSION + " got: " + slice[0]);
+            return null;
+        }
+
+        version = slice[0];
+        type = PacketType.values()[Integer.parseInt(slice[1])];
+        length = Integer.parseInt(slice[2]);
+        body = slice[slice.length - 1];
 
         return new Packet(version, type, length, body);
     }
@@ -52,30 +66,36 @@ class Packet {
     }
 
     public boolean isValid() {
-        byte[] messageBytes = bytes();
+        if (rawMessage == null) {
+            return true;
+        }
 
-        return messageBytes[0] == PROTOCOL_VERSION &&
-                isPacketTypeValid(messageBytes[1]);
+        String[] parts = rawMessage.split(PROTOCOL_HEADER_SEPERATOR);
+
+        return parts[0].equals(PROTOCOL_VERSION) &&
+                isPacketTypeValid( Integer.parseInt(parts[1]));
     }
 
-    public boolean isPacketTypeValid(byte messageByte) {
-        return PacketType.values().length >= messageByte && PacketType.values()[messageByte] != null;
+    public boolean isPacketTypeValid(int rawPacketType) {
+        return PacketType.values().length >= rawPacketType && PacketType.values()[rawPacketType] != null;
     }
 
     public String encodeHeader() {
         String string = "";
         string += PROTOCOL_VERSION;
-        string += (byte) packetType.ordinal();
+        string += PROTOCOL_HEADER_SEPERATOR;
+        string += packetType.ordinal();
+        string += PROTOCOL_HEADER_SEPERATOR;
         string += contentLength;
-        string += PROTOCOL_CONTENT_START;
+        string += PROTOCOL_HEADER_SEPERATOR;
         return string;
     }
 
-    public byte[] bytes() {
-        return ("" + encodeHeader() + content).getBytes();
+    public String toString() {
+        return ("" + encodeHeader() + content);
     }
 
-    public byte getProtocolVersion() {
+    public String getProtocolVersion() {
         return protocolVersion;
     }
 

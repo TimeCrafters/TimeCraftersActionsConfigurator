@@ -52,6 +52,8 @@ public class EditActivity extends AppCompatActivity {
     mainActivity = AppSync.getMainActivity();
     dataStructs  = AppSync.getDataStructs();
 
+    AppSync.instance.editActivity = this;
+
     if (!AppSync.instance.allowDestructiveEditing) {
       ((LinearLayout) findViewById(R.id.add_variable_form)).setVisibility(View.INVISIBLE);
     }

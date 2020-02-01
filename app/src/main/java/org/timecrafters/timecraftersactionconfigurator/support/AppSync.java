@@ -3,10 +3,12 @@ package org.timecrafters.timecraftersactionconfigurator.support;
 import android.support.design.widget.Snackbar;
 import android.view.View;
 
+import org.timecrafters.timecraftersactionconfigurator.EditActivity;
 import org.timecrafters.timecraftersactionconfigurator.MainActivity;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.DataStruct;
 import org.timecrafters.timecraftersactionconfigurator.jsonhandler.Writer;
 import org.timecrafters.timecraftersactionconfigurator.server.Connection;
+import org.timecrafters.timecraftersactionconfigurator.server.PacketHandler;
 import org.timecrafters.timecraftersactionconfigurator.server.Server;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ public class AppSync {
   public boolean serverEnabled = false,
                  allowDestructiveEditing = false;
   public MainActivity mainActivity;
+  public EditActivity editActivity;
 
   private Timer uiController;
 
@@ -51,24 +54,24 @@ public class AppSync {
     return instance.mainActivity;
   }
 
-  static public void saveJSON() {
-    saveJSON(getMainActivity().primaryLayout, "");
+  static public EditActivity getEditActivity() {
+    return instance.editActivity;
   }
 
-  static public void saveJSON(View view, String message) {
+  static public boolean saveJSON() {
+    return saveJSON(getMainActivity().primaryLayout, "");
+  }
+
+  static public boolean saveJSON(View view, String message) {
     boolean writeSucceeded = Writer.writeJSON(Writer.getConfigFilePath(), getDataStructs());
 
     if (writeSucceeded) {
       if (getConnection() != null && !getConnection().isClosed()) {
-        getConnection().puts(Writer.toJson(getDataStructs()));
+        getConnection().getClient().puts(PacketHandler.packetDumpConfig(Writer.toJson(getDataStructs())).toString());
       }
-
-      Snackbar.make(view, message+" JSON Saved.", Snackbar.LENGTH_SHORT)
-              .setAction("Action", null).show();
-    } else {
-      Snackbar.make(view, "Failed to write JSON!", Snackbar.LENGTH_LONG)
-              .setAction("Action", null).show();
     }
+
+    return writeSucceeded;
   }
 
   static public void addNewAction(String name) {

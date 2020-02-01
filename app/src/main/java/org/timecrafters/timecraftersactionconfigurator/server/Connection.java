@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Connection {
+  private PacketHandler packetHandler;
   private Client client;
   private String hostname;
   private int port;
@@ -29,6 +30,7 @@ public class Connection {
   public Connection(String hostname, int port) {
     this.hostname = hostname;
     this.port = port;
+    this.packetHandler = new PacketHandler(true);
 
     this.connectionHandlingRunner = new Runnable() {
       @Override
@@ -76,27 +78,13 @@ public class Connection {
       String message = client.gets();
 
       if (message != null) {
-        if (
-                message.length() > 4 && message.charAt(0) == "[".toCharArray()[0] &&
-                message.charAt(message.length() - 1) == "]".toCharArray()[0]
-        ) {
-          // write json to file
-          Log.i(TAG, "Got valid json: " + message);
-           Writer.overwriteConfigFile(message);
-
-          AppSync.getMainActivity().runOnUiThread(new Runnable() {
-             @Override
-             public void run() {
-               AppSync.getMainActivity().reloadConfig();
-             }
-           });
-        }
+        packetHandler.handle(message);
       }
 
       if (System.currentTimeMillis() > lastHeartBeatSent + heartBeatInterval) {
         lastHeartBeatSent = System.currentTimeMillis();
 
-        client.puts(Packet.PROTOCOL_HEARTBEAT);
+        client.puts(PacketHandler.packetHeartBeat().toString());
       }
 
       try {
